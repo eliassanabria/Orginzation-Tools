@@ -33,3 +33,12 @@ YSA Tools will focus on:
 
 ##### Disclaimer:
 Applications that are used by church organizations is not supported nor endorsed by the Church of Jesus Christ of Latter-Day Saints.
+
+
+#### Server Info:
+IP address: 3.12.0.248
+
+URL: https://organizationtools.org
+
+## Goals:
+Have subdomains for different organizations that use the application. Potentially for businesses, have them integrate their own Single Sign-on for select applications.
