@@ -79,6 +79,9 @@
     }
     .DirectoryGridLayout{
         padding: 10px;
+		    grid-template-columns: repeat(auto-fill, []1fr);
+
+		
     }
     nav {
         display: flex;
@@ -112,6 +115,7 @@
         width: 40px;
         height: 40px;
         border-radius: 50%;
+        background-color: #e8e8e8;
       }
       .status-container {
         display: flex;
@@ -149,48 +153,13 @@
 
 .directory-grid {
     display: grid;
-    grid-template-columns: repeat(10, []1fr);
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     grid-gap: 1rem;
   }
   
- 
-  @media (max-width: 414px) {
-    .directory-grid {
-      grid-template-columns: repeat(2, []1fr);
-		grid-g: 1rem;
-    }
-  }
-  @media (max-width: 1366px) {
-    .directory-grid {
-      grid-template-columns: repeat(8, []1fr);
-		grid-g: 1rem;
-    }
-  }
-  @media (max-width: 1024px) {
-	  nav {
-    flex-direction: column;
-    align-items: center;
-  }
-    .directory-grid {
-      grid-template-columns: repeat(6, []1fr);
-		grid-g: 1rem;
-    }
-  }
-  @media (max-width: 685px) {
-    .directory-grid {
-      grid-template-columns: repeat(4, []1fr);
-		grid-g: 1rem;
-    }
-  }
- @media (max-width: 600px) {
-    .directory-grid {
-      grid-template-columns: repeat(2, []1fr);
-		grid-g: 1rem;
-    }
-  }
-##Vertical Menu
 
 
+#Vertical Menu
 nav {
   display: flex;
   justify-content: space-between;
@@ -218,7 +187,7 @@ nav {
   display: block;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 700px) {
   nav {
     flex-direction: column;
     align-items: center;
@@ -235,5 +204,15 @@ nav {
 	.dropdown {
 	display: block;
 	position: relative;
+  margin-bottom: 15px;
+  }
 }
+
+.tools-footer {
+  margin-top: 100px;
+  background-color: #0A2A52;
+  color: white;
+  align-items: center;
+  align-self: center;
+  align-content: center;
 }

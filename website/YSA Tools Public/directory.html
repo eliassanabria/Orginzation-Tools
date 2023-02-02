@@ -10,15 +10,15 @@
 </head>
 <nav>
 	<div class="user-account-menu">
-	  <img src="https://media.licdn.com/dms/image/C4D03AQEsy3vazJSOpQ/profile-displayphoto-shrink_800_800/0/1597247840181?e=2147483647&v=beta&t=AfLvDe1FzLUdyDvPygpD_tV4VYFflHz7U9ae792EDs0" alt="Profile Picture" class="profile-picture">
+	  <img src="https://cdn-icons-png.flaticon.com/512/456/456212.png" alt="Profile Picture" class="profile-picture">
 	  <div class="user-info">
-		<a href="/404.html">Welcome, Elias</a>
+		<a href="/404.html">Welcome, <t id="FirstName">Guest User</t> </a>
 		<a href="/404.html">Account Settings</a>
-		<select id="status-dropdown" name="status">
-			<option value="online" class="status-item online">Online</option>
-			<option value="away" class="status-item away">Away</option>
-			<option value="dnd" class="status-item dnd">Do Not Disturb</option>
-			<option value="offline" class="status-item offline">Appear Offline</option>
+		<select id="status-dropdown" onchange="updateStatus()" name="status">
+			<option value="Online" class="status-item online">Online</option>
+			<option value="Away" class="status-item away">Away</option>
+			<option value="Do Not Disturb" class="status-item dnd">Do Not Disturb</option>
+			<option value="Appear Offline" class="status-item offline">Appear Offline</option>
 		  </select>
 		  
 		  
@@ -26,22 +26,22 @@
 	</div>
 	<a href="#" class="desktopNav">Directory</a>
 	<a href="#" class="desktopNav">Notifications</a>
-	<a href="#" class="desktopNav">Logout</a>
+	<a href="/index.html" onclick="logout()" class="desktopNav">Logout</a>
 	
 	<div class="dropdown" align="center">
 		<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Hamburger_icon_white.svg/1024px-Hamburger_icon_white.svg.png" width="20px" alt="Menu_icon">
     <a href="#"><b>Menu</b></a>
     <div class="dropdown-content">
 		<div class="user-account">
-	  <img src="https://media.licdn.com/dms/image/C4D03AQEsy3vazJSOpQ/profile-displayphoto-shrink_800_800/0/1597247840181?e=2147483647&v=beta&t=AfLvDe1FzLUdyDvPygpD_tV4VYFflHz7U9ae792EDs0" alt="Profile Picture" class="profile-picture">
+	  <img src="https://cdn-icons-png.flaticon.com/512/456/456212.png" alt="Profile Picture" class="profile-picture">
 	  <div class="user-info">
-		<a href="/404.html">Hi, Elias</a>
+		<a href="/404.html">Hi, <t id="FirstName">Guest User</t></a>
 		<a href="/404.html">Settings</a>
-		<select id="status-dropdown-menu" name="status">
-			<option value="online" class="status-item online">Online</option>
-			<option value="away" class="status-item away">Away</option>
-			<option value="dnd" class="status-item dnd">Do Not Disturb</option>
-			<option value="offline" class="status-item offline">Appear Offline</option>
+		<select id="status-dropdown-mobile" onchange="updateStatusMobile()" name="status">
+			<option value="Online" class="status-item online">Online</option>
+			<option value="Away" class="status-item away">Away</option>
+			<option value="Do Not Disturb" class="status-item dnd">Do Not Disturb</option>
+			<option value="Appear Offline" class="status-item offline">Appear Offline</option>
 		  </select>
 		    </div>
 
@@ -54,10 +54,10 @@
   </nav>
   
   
-<body>
+<body onload="isSignedIn()">
 	<header>
     	<div align="center">
-		[Ward Name] YSA Tools
+		<b>[Ward Name] YSA Tools</b>
 	</div>
     <nav>
 		
@@ -73,11 +73,11 @@
 		  <div class="Directory_User_Object_Boarder">
 						  <div class="directory_user_small_profile_icon_boarder">
 							  <img class="directory_user_small_profile_icon" src="https://cdn-icons-png.flaticon.com/512/456/456212.png" alt="UserImageProfileSmall">
-							  <div class="overlayUserStatusOffline"></div>
+							  <div id="CurrentUserLoggedIn" class="overlayUserStatusOnline"></div>
 						  </div>
-						  <div class="UserPreferredName">[Preferred Name]</div>
-						  <div class="UserApartmentLable">[Apartment Location]</div>
-						  <div class="UserCallingsLable">[Callings]</div>
+						  <div class="UserPreferredName"><t id="PrefferedName">Guest User</t></div>
+						  <div class="UserApartmentLable">BYU Campus TMCB</div>
+						  <div class="UserCallingsLable">CS 260 TA, Professor, Student</div>
 					  </div>
 		</div>
 		<div class="directory-item">
@@ -176,15 +176,65 @@
 			<div class="Directory_User_Object_Boarder">
 						  <div class="directory_user_small_profile_icon_boarder">
 							  <img class="directory_user_small_profile_icon" src="https://media.licdn.com/dms/image/C4D03AQEsy3vazJSOpQ/profile-displayphoto-shrink_800_800/0/1597247840181?e=2147483647&v=beta&t=AfLvDe1FzLUdyDvPygpD_tV4VYFflHz7U9ae792EDs0" alt="UserImageProfileSmall">
-							  <div class="overlayUserStatusOnline"></div>
+							  <div class="overlayUserStatusAway"></div>
 						  </div>
 						  <div class="UserPreferredName">Elias Sanabria</div>
-						  <div class="UserApartmentLable">Old Academy #207</div>
+						  <div class="UserApartmentLable">Old Academy #200</div>
 						  <div class="UserCallingsLable">Ward Clerk</div>
 					  </div>
 		  </div>
 	  </div>
 	
-	
+	<script>
+		function updateStatus(){
+			var selectedStatus = document.getElementById("status-dropdown").value;
+			document.getElementById("status-dropdown-mobile").value = selectedStatus;
+			updateStatusIcons();
+		}
+		function updateStatusMobile(){
+			var selectedStatus = document.getElementById("status-dropdown-mobile").value;
+			document.getElementById("status-dropdown").value = selectedStatus;
+			updateStatusIcons();
+		}
+		function updateStatusIcons(){
+			var selectedStatus = document.getElementById("status-dropdown-mobile").value;
+			if(selectedStatus =="Appear Offline"){
+				document.getElementById("CurrentUserLoggedIn").className = "overlayUserStatusOffline";
+			}
+			if(selectedStatus =="Online"){
+				document.getElementById("CurrentUserLoggedIn").className = "overlayUserStatusOnline";
+			}
+			if(selectedStatus =="Away"){
+				document.getElementById("CurrentUserLoggedIn").className = "overlayUserStatusAway";
+			}
+			if(selectedStatus =="Do Not Disturb"){
+				document.getElementById("CurrentUserLoggedIn").className = "overlayUserStatusDND";
+			}
+		}
+		function isSignedIn(){
+			var signedIn = localStorage.getItem("IsSignedIn");
+			if(signedIn == "true"){
+				document.getElementById("PrefferedName").innerHTML = localStorage.getItem("PrefName");
+				document.getElementById("FirstName").innerHTML = localStorage.getItem("FirstName");
+			}
+			else{
+				alert("Sorry you need to be signed in to view this page.");
+				window.location.href="/index.html";
+			}
+		}
+		function logout(){
+			localStorage.setItem("IsSignedIn", false);
+		}
+
+		
+	</script>
 </body>
+<footer class="tools-footer" align="center">
+	<p>This application is not spported nor endorsed by the Church of Jesus Christ of Latter-day Saints</p>
+	<button class="AppSheet" style="width:auto;" align ="center" onclick="window.location.href='https://pysa169.eliassanabria.com';">Provo YSA 169 Ward Login
+	</button>
+	<div>
+		<p>This webiste is under construction</p>
+	</div>
+</footer>
 </html>

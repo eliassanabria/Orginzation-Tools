@@ -14,18 +14,87 @@
 
 	</head>
 	<body>
-		<title class="pageTitle">YSA Tools Portal</title>
+		<title id="pageTitle">YSA Tools Portal</title>
 		<header class="page-Header">Welcome to YSA Tools</header>
-		<h1 class="page-sub-page-title">Login</h1>
-		<form action="login.html" method="post" align = "center">
-			<label for="email">Email:</label>
-			<input type="text" id="email" name="email" reaquired><br><br>
-			<label for="password">Password:</label>
-			<input type="password" id="password" name="password" required><br><br>
-			<input type="button" onclick="window.location.href='404.html'" value="Register">
-			<input type="submit" value="Login">
-		  </form>
+		<h1 class="Form_Title"><div id="FormTitleHead">Login</div></h1>
+		<div class="AuthenticationFormHolder" style="justify-content: center; display: flex;">
+			<form id="LoginForm" action="directory.html" method="get" style="align-items: flex-start;">
+				<label for="email">Email:</label>
+				<input type="emailText" id="email" name="email" required><br><br>
+				<label for="password">Password:</label>
+				<input type="password" id="password" name="password" required><br><br>
+				<input type="button" class="GoRegisterBtn" onclick=showRegister() value="Register">
+				<input type="submit" value="Login" onclick="loginValidate()"><br><br>
+			  </form>
+			  <form id="RegisterForm" action="directory.html" method="get">
+				<label for="email">Email: </label>
+				<input type="emailText" id="emailRegistered" name="varEmail"required />
+				<input type="checkbox" id="shareEmailWard" name="shareEmailWithWard" value="ShareEmailWard" checked /><label for="checkbox1">Share with Ward</label><br><br>
+				<label for="text">First Name: </label>
+				<input type="text" id="firstNameRegister" name="varText" placeholder="First Name" spellcheck required /><br><br>
+				<label for="text">Last Name: </label>
+				<input type="text" id="lastNameRegister" name="varText" placeholder="Last Name" spellcheck required  /><br><br>
+				<label for="text">Preferred Name: </label>
+				<input type="text" id="prefName" name="varText" placeholder="Preffered name" spellcheck required />
+				<input type="checkbox" id="checkbox1" name="sharePrefNameWithWard" value="sharePrefNameWard" checked /><label for="checkbox1">Display In directory</label><br><br>
+				<label for="phone">Enter your phone number:</label>
+				<input type="tel" id="phone" name="phone" placeholder="801-422-0000" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" required>
+				<input type="checkbox" id="sharePhoneWard" name="sharePhonehWard" value="sharePhoneWard" checked /><label for="checkbox1">Share with Ward</label><br><br>
+				<label for="date">Date of Birth: </label>
+				<input type="date-local" name="varDate" id="DOB_Reg"required placeholder="01/01/1999" />Gender:
+				<label for="maleGender">Male</label>
+				<input type="radio" id="maleGender" name="varRadio" value="maleGender" checked />
+				<label for="femaleGender">Female</label>
+				<input type="radio" id="femaleGender" name="varRadio" value="femaleGender" /><br><br>
+			
+				<label for="password">Password: </label>
+				<input type="password" id="passwordRegister" name="varPassword" required/>
+				<br><br>
+				<input class="ReturnToLoginBtn" type="button" onclick=ShowLogin() value="Return to Login">
+				<button type="submit" onclick=StoreRegistrationLocal()>Create Account</button>
+			  </form>
+
+		</div>
+		
 		  
+		  
+		  
+		  <script type="text/javascript">
+			function showRegister(){
+				document.getElementById("RegisterForm").style.display = "block";
+				document.getElementById("LoginForm").style.display = "none";
+				document.getElementsByID("FormTitleHead").innerHTML = "Register";
+			}
+			function ShowLogin(){
+				document.getElementById("RegisterForm").style.display = "none";
+				document.getElementById("LoginForm").style.display = "block";
+				document.getElementsById("FormTitleHead").innerHTML = "Login";
+			}
+			function StoreRegistrationLocal(){
+				localStorage.setItem("FirstName",document.getElementById("firstNameRegister").value);
+				localStorage.setItem("LastName",document.getElementById("lastNameRegister").value);
+				localStorage.setItem("PrefName",document.getElementById("prefName").value);
+				localStorage.setItem("EmailAddress",document.getElementById("emailRegistered").value);
+				localStorage.setItem("Password",document.getElementById("passwordRegister").value);
+			}
+			function loginValidate(){
+				if(document.getElementById("email").value == localStorage.getItem("EmailAddress")){
+					if(document.getElementById("password").value == localStorage.getItem("Password")){
+						localStorage.setItem("IsSignedIn", true);
+					}
+					else{
+						alert("Invalid Password! Try again!");
+						window.location.href="/index.html";
+					}
+				}
+				else{
+					alert("Invalid email, or account does not exist, try again.");
+					window.location.href="/index.html";
+				}
+			}
+			alert("Welcome to the YSA Organization Tools Application. This site is under construction at the moment but is gaining functionality. You can test out functionality by registering for an account. This is not a real account and as not stored on a server."
+			+"All data is stored in your browser's storage.");
+		  </script>
 	</body>
 	<footer class="tools-footer" align="center">
 		<p>This application is not spported nor endorsed by the Church of Jesus Christ of Latter-day Saints</p>
