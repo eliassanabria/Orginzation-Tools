@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-54RHPZDT0P"></script>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="directory.css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <title>Account Settings</title>
+        <script src="home.js"></script>
+    </head>
+    <nav>
+        <div class="user-account-menu">
+          <img src="https://cdn-icons-png.flaticon.com/512/456/456212.png" alt="Profile Picture" class="profile-picture">
+          <div class="user-info">
+            <a href="/404.html">Welcome, <t id="FirstName">Guest User</t> </a>
+            <a href="/Settings.html">Account Settings</a>
+            <select id="status-dropdown" onchange="updateStatus()" name="status">
+                <option value="Online" class="status-item online">Online</option>
+                <option value="Away" class="status-item away">Away</option>
+                <option value="Do Not Disturb" class="status-item dnd">Do Not Disturb</option>
+                <option value="Appear Offline" class="status-item offline">Appear Offline</option>
+              </select>
+              
+              
+          </div>
+        </div>
+        <a href="#" class="desktopNav">Directory</a>
+        <a href="#" class="desktopNav">Notifications</a>
+        <a href="/index.html" onclick="logout()" class="desktopNav">Logout</a>
+        
+        <div class="dropdown" align="center">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Hamburger_icon_white.svg/1024px-Hamburger_icon_white.svg.png" width="20px" alt="Menu_icon">
+        <a href="#"><b>Menu</b></a>
+        <div class="dropdown-content">
+            <div class="user-account">
+          <img src="https://cdn-icons-png.flaticon.com/512/456/456212.png" alt="Profile Picture" class="profile-picture">
+          <div class="user-info">
+            <a href="/404.html">Hi, <t id="FirstName">Guest User</t></a>
+            <a href="/Settings.html">Settings</a>
+            <select id="status-dropdown-mobile" onchange="updateStatusMobile()" name="status">
+                <option value="Online" class="status-item online">Online</option>
+                <option value="Away" class="status-item away">Away</option>
+                <option value="Do Not Disturb" class="status-item dnd">Do Not Disturb</option>
+                <option value="Appear Offline" class="status-item offline">Appear Offline</option>
+              </select>
+                </div>
+    
+          </div>
+            <a href="/directory.html">Directory</a>
+            <a href="/404.html">Notifications</a>
+            <a href="/index.html">Logout</a>
+        </div>
+        </div>
+      </nav>
+    <body onload="isSignedIn()">
+        <h1 align = "center">Account Settings</h1>
+        <section class="User-Settings">
+            <div>
+                <label><b>First Name:</b></label>
+                <label id="FirstName">Guest</label>
+            </div>
+            <div>
+                <label><b>Last Name:</b></label>
+                <label id="LastName">User</label>
+            </div>
+            <div>
+                <lable><b>Preferred Name:</b></lable>
+                <lable id="PrefferedName">Guest User</lable>
+            </div>
+            <div>
+                <label><b>Email Address:</b></label>
+                <input type="email" class="user-email" disabled placeholder="email@mail.com">
+                <input type="button" id="change-email-btn" value="Change Email" disabled>
+            </div>
+            <div>
+                <label><b>Phone:</b></label>
+                <input type="tel" class="userPhone" disabled placeholder="801-422-0000">
+                <input type="button" id="change-phone-btn" value="Change Phone" disabled>
+                <label id="phone verified">Verified</label>
+            </div>
+            <div>
+                <label><b>Date of Birth:</b></label>
+                <input type="date" class="user-dob" disabled placeholder="01/01/1999">
+            </div>
+            <div>
+                <label><b>Password:</b></label>
+                <input type="password" class="user-password" disabled value="password">
+                <input type="button" id="change-password" value="Change Password" disabled>
+            </div>
+        </section>
+        <footer class="tools-footer">
+			<div class="footCenter">
+			  <h9>This application is not spported nor endorsed by the Church of Jesus Christ of Latter-day Saints</h9>
+			</div>
+			<div class="footCenter">
+			  <button class="AppSheet" style="width:auto; align-items: center;" onclick="window.location.href='https://pysa169.eliassanabria.com';">Provo YSA 169 Ward Login
+			  </button>
+			</div>
+			<div class="footCenter">
+			  <h9>This webiste is under construction</h9>
+			</div>
+		</footer>
+
+        <script type="text/javascript">
+            
+        </script>
+    </body>
+    
+</html>

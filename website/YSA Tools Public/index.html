@@ -74,8 +74,10 @@
 				localStorage.setItem("FirstName",document.getElementById("firstNameRegister").value);
 				localStorage.setItem("LastName",document.getElementById("lastNameRegister").value);
 				localStorage.setItem("PrefName",document.getElementById("prefName").value);
+				localStorage.setItem("PhoneNumber",document.getElementById("phone").value);
 				localStorage.setItem("EmailAddress",document.getElementById("emailRegistered").value);
 				localStorage.setItem("Password",document.getElementById("passwordRegister").value);
+				localStorage.setItem("IsSignedIn", true);
 			}
 			function loginValidate(){
 				if(document.getElementById("email").value == localStorage.getItem("EmailAddress")){
@@ -95,13 +97,18 @@
 			alert("Welcome to the YSA Organization Tools Application. This site is under construction at the moment but is gaining functionality. You can test out functionality by registering for an account. This is not a real account and as not stored on a server."
 			+"All data is stored in your browser's storage.");
 		  </script>
+		  <footer class="tools-footer">
+			<div class="footCenter">
+			  <h9>This application is not spported nor endorsed by the Church of Jesus Christ of Latter-day Saints</h9>
+			</div>
+			<div class="footCenter">
+			  <button class="AppSheet" style="width:auto; align-items: center;" onclick="window.location.href='https://pysa169.eliassanabria.com';">Provo YSA 169 Ward Login
+			  </button>
+			</div>
+			<div class="footCenter">
+			  <h9>This webiste is under construction</h9>
+			</div>
+		  </footer>
 	</body>
-	<footer class="tools-footer" align="center">
-		<p>This application is not spported nor endorsed by the Church of Jesus Christ of Latter-day Saints</p>
-		<button class="AppSheet" style="width:auto;" align ="center" onclick="window.location.href='https://pysa169.eliassanabria.com';">Provo YSA 169 Ward Login
-		</button>
-		<div>
-			<p>This webiste is under construction</p>
-		</div>
-	</footer>
+	
 </html>

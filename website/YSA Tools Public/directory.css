@@ -1,185 +1,178 @@
-.directory_user_small_profile_icon_boarder .directory_user_small_profile_icon{
-    border-radius: 50%;
-    width: 100px;
-    
-    text-align: center;
+.directory_user_small_profile_icon_boarder .directory_user_small_profile_icon {
+  border-radius: 50%;
+  width: 100px;
+
+  text-align: center;
 }
 
 .directory_user_small_profile_icon_boarder .overlayUserStatusOnline {
-    position: absolute;
-    top: 50%;
-    left: 65%;
-    background-color: rgb(72, 171, 11);
-    border-radius: 50%;
-    height: 16px;
-    width: 16px;
-    bottom: 0;
-    right: 0;
-  }
-  .directory_user_small_profile_icon_boarder .overlayUserStatusOffline {
-    position: absolute;
-    top: 50%;
-    left: 65%;
-    background-color: rgb(180, 178, 178);
-    border-radius: 50%;
-    height: 16px;
-    width: 16px;
-    bottom: 0;
-    right: 0;
-  }
-  .directory_user_small_profile_icon_boarder .overlayUserStatusAway {
-    position: absolute;
-    top: 50%;
-    left: 65%;
-    background-color: rgb(230, 184, 59);
-    border-radius: 50%;
-    height: 16px;
-    width: 16px;
-    bottom: 0;
-    right: 0;
-  }
-  .directory_user_small_profile_icon_boarder .overlayUserStatusDND {
-    position: absolute;
-    top: 50%;
-    left: 65%;
-    background-color: rgb(220, 10, 10);
-    border-radius: 50%;
-    height: 16px;
-    width: 16px;
-    bottom: 0;
-    right: 0;
-  }
-   .Directory_User_Object_Boarder .Directory_User_Object_Boarder{
-    width: 120px;
-    height: 150px;
-    position: relative;
-    }
-    .directory_user_small_profile_icon_boarder{
-        width: 100px;
-        height: 100px;
-        align-items: center;
-    display: block;
-    margin-left: auto;
+  position: absolute;
+  top: 50%;
+  left: 65%;
+  background-color: rgb(72, 171, 11);
+  border-radius: 50%;
+  height: 16px;
+  width: 16px;
+  bottom: 0;
+  right: 0;
+}
+.directory_user_small_profile_icon_boarder .overlayUserStatusOffline {
+  position: absolute;
+  top: 50%;
+  left: 65%;
+  background-color: rgb(180, 178, 178);
+  border-radius: 50%;
+  height: 16px;
+  width: 16px;
+  bottom: 0;
+  right: 0;
+}
+.directory_user_small_profile_icon_boarder .overlayUserStatusAway {
+  position: absolute;
+  top: 50%;
+  left: 65%;
+  background-color: rgb(230, 184, 59);
+  border-radius: 50%;
+  height: 16px;
+  width: 16px;
+  bottom: 0;
+  right: 0;
+}
+.directory_user_small_profile_icon_boarder .overlayUserStatusDND {
+  position: absolute;
+  top: 50%;
+  left: 65%;
+  background-color: rgb(220, 10, 10);
+  border-radius: 50%;
+  height: 16px;
+  width: 16px;
+  bottom: 0;
+  right: 0;
+}
+.Directory_User_Object_Boarder .Directory_User_Object_Boarder {
+  width: 120px;
+  height: 150px;
+  position: relative;
+}
+.directory_user_small_profile_icon_boarder {
+  width: 100px;
+  height: 100px;
+  align-items: center;
+  display: block;
+  margin-left: auto;
   margin-right: auto;
-    }
-    .Directory_User_Object_Boarder{
-        width: 150px;
-        height: 170px;
-        position: relative;
-        text-align: center;
-    }
-    .UserPreferredName{
-        font-weight: bold;
-    }
-    .UserApartmentLable{
-        font-size: small;
-    }
-    .UserCallingsLable{
-        font-size: smaller;
-    }
-    .DirectoryGridLayout{
-        padding: 10px;
-		    grid-template-columns: repeat(auto-fill, []1fr);
-
-		
-    }
-    nav {
-        display: flex;
-        align-items: center;
-        background-color: #0A2A52;
-        color:white;
-      }
-      
-      .user-account-menu {
-        display: flex;
-        align-items: center;
-        margin-right: auto;
-      }
-.user-account {
-        display: flex;
-        align-items: center;
-        margin-right: auto;
-      }
-      
-      .user-info a {
-        padding: 0.5rem;
-        text-decoration: none;
-      }
-      
-      nav a {
-        padding: 0.5rem 1rem;
-        text-decoration: none;
-        color:white;
-      }
-      .profile-picture {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color: #e8e8e8;
-      }
-      .status-container {
-        display: flex;
-        align-items: center;
-        position: relative;
-      }
-      
-      #status-dropdown {
-        padding: 0.5rem;
-        background-color: #fff;
-        border: none;
-      }
-      
-      #status-dropdown option {
-        color: #000;
-      }
-      
-      #status-dropdown option.online {
-        background-color: #28a745;
-      }
-      
-      #status-dropdown option.away {
-        background-color: #ffc107;
-      }
-      
-      #status-dropdown option.dnd {
-        background-color: #dc3545;
-      }
-      
-      #status-dropdown option.offline {
-        background-color: #6c757d;
-      }
-      
-            
-
-.directory-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    grid-gap: 1rem;
-  }
-  
-
-
-#Vertical Menu
+}
+.Directory_User_Object_Boarder {
+  width: 150px;
+  height: 170px;
+  position: relative;
+  text-align: center;
+}
+.UserPreferredName {
+  font-weight: bold;
+}
+.UserApartmentLable {
+  font-size: small;
+}
+.UserCallingsLable {
+  font-size: smaller;
+}
+.DirectoryGridLayout {
+  padding: 10px;
+  grid-template-columns: repeat(auto-fill, []1fr);
+}
 nav {
   display: flex;
+  align-items: center;
+  background-color: #0a2a52;
+  color: white;
+}
+
+.user-account-menu {
+  display: flex;
+  align-items: center;
+  margin-right: auto;
+}
+.user-account {
+  display: flex;
+  align-items: center;
+  margin-right: auto;
+}
+
+.user-info a {
+  padding: 0.5rem;
+  text-decoration: none;
+}
+
+nav a {
+  padding: 0.5rem 1rem;
+  text-decoration: none;
+  color: white;
+}
+.profile-picture {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #e8e8e8;
+}
+.status-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+#status-dropdown {
+  padding: 0.5rem;
+  background-color: #fff;
+  border: none;
+}
+
+#status-dropdown option {
+  color: #000;
+}
+
+#status-dropdown option.online {
+  background-color: #28a745;
+}
+
+#status-dropdown option.away {
+  background-color: #ffc107;
+}
+
+#status-dropdown option.dnd {
+  background-color: #dc3545;
+}
+
+#status-dropdown option.offline {
+  background-color: #6c757d;
+}
+
+.directory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-gap: 1rem;
+}
+
+#Vertical Menu nav {
+  display: flex;
   justify-content: space-between;
-	max-width: inherit;
+  max-width: inherit;
 }
 
 .dropdown {
-	display: none;
-	position: relative;
+  display: none;
+  position: relative;
 }
-.status-dropdown-menu{
-	align-content: center;
-	align-items: center;
+.status-dropdown-menu {
+  align-content: center;
+  align-items: center;
 }
 .dropdown-content {
   display: none;
   position: absolute;
-  background-color: #0A2A52;
+  background-color: #0a2a52;
   min-width: 200px;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
   z-index: 1;
 }
 
@@ -192,27 +185,37 @@ nav {
     flex-direction: column;
     align-items: center;
   }
-	.user-account-menu {
-        display: none;
-      }
+  .user-account-menu {
+    display: none;
+  }
   nav a {
     margin: 0.5rem 0;
   }
-	.desktopNav{
-		display: none;
-	}
-	.dropdown {
-	display: block;
-	position: relative;
-  margin-bottom: 15px;
+  .desktopNav {
+    display: none;
+  }
+  .dropdown {
+    display: block;
+    position: relative;
+    margin-bottom: 15px;
   }
 }
 
 .tools-footer {
-  margin-top: 100px;
-  background-color: #0A2A52;
+  flex: 0 30px;
   color: white;
+  background-color: #0a2a52;
+  justify-content: center;
+  justify-content: center;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  height: 100vh;
+}
+.footCenter {
+  display: flex;
+  justify-content: center;
   align-items: center;
-  align-self: center;
-  align-content: center;
 }

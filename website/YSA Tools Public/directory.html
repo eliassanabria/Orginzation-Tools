@@ -4,16 +4,17 @@
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-54RHPZDT0P"></script>
 <meta charset="UTF-8">
 <link rel="stylesheet" href="directory.css" />
+<link rel="javascript" href="home.js"/>
 <title>Ward Directory</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
+<script src="home.js"></script>
 </head>
 <nav>
 	<div class="user-account-menu">
 	  <img src="https://cdn-icons-png.flaticon.com/512/456/456212.png" alt="Profile Picture" class="profile-picture">
 	  <div class="user-info">
 		<a href="/404.html">Welcome, <t id="FirstName">Guest User</t> </a>
-		<a href="/404.html">Account Settings</a>
+		<a href="/Settings.html">Account Settings</a>
 		<select id="status-dropdown" onchange="updateStatus()" name="status">
 			<option value="Online" class="status-item online">Online</option>
 			<option value="Away" class="status-item away">Away</option>
@@ -36,7 +37,7 @@
 	  <img src="https://cdn-icons-png.flaticon.com/512/456/456212.png" alt="Profile Picture" class="profile-picture">
 	  <div class="user-info">
 		<a href="/404.html">Hi, <t id="FirstName">Guest User</t></a>
-		<a href="/404.html">Settings</a>
+		<a href="/Settings.html">Settings</a>
 		<select id="status-dropdown-mobile" onchange="updateStatusMobile()" name="status">
 			<option value="Online" class="status-item online">Online</option>
 			<option value="Away" class="status-item away">Away</option>
@@ -184,57 +185,19 @@
 					  </div>
 		  </div>
 	  </div>
+	  <footer class="tools-footer">
+		<div class="footCenter">
+		  <h9>This application is not spported nor endorsed by the Church of Jesus Christ of Latter-day Saints</h9>
+		</div>
+		<div class="footCenter">
+		  <button class="AppSheet" style="width:auto; align-items: center;" onclick="window.location.href='https://pysa169.eliassanabria.com';">Provo YSA 169 Ward Login
+		  </button>
+		</div>
+		<div class="footCenter">
+		  <h9>This webiste is under construction</h9>
+		</div>
+	  </footer>
 	
-	<script>
-		function updateStatus(){
-			var selectedStatus = document.getElementById("status-dropdown").value;
-			document.getElementById("status-dropdown-mobile").value = selectedStatus;
-			updateStatusIcons();
-		}
-		function updateStatusMobile(){
-			var selectedStatus = document.getElementById("status-dropdown-mobile").value;
-			document.getElementById("status-dropdown").value = selectedStatus;
-			updateStatusIcons();
-		}
-		function updateStatusIcons(){
-			var selectedStatus = document.getElementById("status-dropdown-mobile").value;
-			if(selectedStatus =="Appear Offline"){
-				document.getElementById("CurrentUserLoggedIn").className = "overlayUserStatusOffline";
-			}
-			if(selectedStatus =="Online"){
-				document.getElementById("CurrentUserLoggedIn").className = "overlayUserStatusOnline";
-			}
-			if(selectedStatus =="Away"){
-				document.getElementById("CurrentUserLoggedIn").className = "overlayUserStatusAway";
-			}
-			if(selectedStatus =="Do Not Disturb"){
-				document.getElementById("CurrentUserLoggedIn").className = "overlayUserStatusDND";
-			}
-		}
-		function isSignedIn(){
-			var signedIn = localStorage.getItem("IsSignedIn");
-			if(signedIn == "true"){
-				document.getElementById("PrefferedName").innerHTML = localStorage.getItem("PrefName");
-				document.getElementById("FirstName").innerHTML = localStorage.getItem("FirstName");
-			}
-			else{
-				alert("Sorry you need to be signed in to view this page.");
-				window.location.href="/index.html";
-			}
-		}
-		function logout(){
-			localStorage.setItem("IsSignedIn", false);
-		}
-
-		
-	</script>
 </body>
-<footer class="tools-footer" align="center">
-	<p>This application is not spported nor endorsed by the Church of Jesus Christ of Latter-day Saints</p>
-	<button class="AppSheet" style="width:auto;" align ="center" onclick="window.location.href='https://pysa169.eliassanabria.com';">Provo YSA 169 Ward Login
-	</button>
-	<div>
-		<p>This webiste is under construction</p>
-	</div>
-</footer>
+
 </html>
