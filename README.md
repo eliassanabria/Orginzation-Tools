@@ -47,3 +47,9 @@ Have subdomains for different organizations that use the application. Potentiall
 ### 23 February 2023
 I have removed driect chat messages from the startup specs temporarily to reduce the amout of time it will take to code what has been done so far.
 The startup has been made progress. However to further accelerate the startup, I will now begin to play with React a little so since this application will need room to expand and grow into multiple directions.
+
+### 1 February 2023
+Drop-down status updates and remains if mobile device rotates.
+Status Changes cause status light to change with JS.
+Login and Registration Authentication are stored on local device until services are written.
+Footer is now on both login and directory screens.
