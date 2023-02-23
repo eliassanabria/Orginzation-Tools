@@ -53,3 +53,4 @@ Drop-down status updates and remains if mobile device rotates.
 Status Changes cause status light to change with JS.
 Login and Registration Authentication are stored on local device until services are written.
 Footer is now on both login and directory screens.
+I added some JS and used local storage to facilitate mocking authentication process until the service is written. I also changed the media queries to determine which type of navigation bar is needed at the top of the page. A collapable one for mobile device screens and full naviagtion bar for desktop users.
