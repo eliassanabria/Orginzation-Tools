@@ -23,11 +23,30 @@ function updateStatusIcons(){
         document.getElementById("CurrentUserLoggedIn").className = "overlayUserStatusDND";
     }
 }
-function isSignedIn(){
+function isSignedInDir(){
     var signedIn = localStorage.getItem("IsSignedIn");
     if(signedIn == "true"){
         document.getElementById("PrefferedName").innerHTML = localStorage.getItem("PrefName");
         document.getElementById("FirstName").innerHTML = localStorage.getItem("FirstName");
+        document.getElementById("FirstNameDesktop").innerHTML = localStorage.getItem("FirstName");
+    }
+    else{
+        alert("Sorry you need to be signed in to view this page.");
+        window.location.href="/index.html";
+    }
+}
+function isSignedInSett(){
+    var signedIn = localStorage.getItem("IsSignedIn");
+    if(signedIn == "true"){
+        document.getElementById("PrefferedNameSetting").innerHTML = localStorage.getItem("PrefName");
+        document.getElementById("FirstName").innerHTML = localStorage.getItem("FirstName");
+        document.getElementById("FirstNameDesktop").innerHTML = localStorage.getItem("FirstName");
+        document.getElementById("FirstNameSetting").innerHTML = localStorage.getItem("FirstName");
+        document.getElementById("LastNameSetting").innerHTML = localStorage.getItem("LastName");
+        document.getElementById("userEmailSetting").value = localStorage.getItem("EmailAddress");
+        document.getElementById("userPhoneSetting").value = localStorage.getItem("PhoneNumber");
+        document.getElementById("UserDOBSetting").value = localStorage.getItem("DOB");
+        document.getElementById("userPassSetting").value = localStorage.getItem("Password");
     }
     else{
         alert("Sorry you need to be signed in to view this page.");

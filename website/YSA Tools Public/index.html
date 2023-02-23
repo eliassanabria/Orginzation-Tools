@@ -41,7 +41,7 @@
 				<input type="tel" id="phone" name="phone" placeholder="801-422-0000" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" required>
 				<input type="checkbox" id="sharePhoneWard" name="sharePhonehWard" value="sharePhoneWard" checked /><label for="checkbox1">Share with Ward</label><br><br>
 				<label for="date">Date of Birth: </label>
-				<input type="date-local" name="varDate" id="DOB_Reg"required placeholder="01/01/1999" />Gender:
+				<input type="date" name="varDate" id="DOB_Reg"required placeholder="01/01/1999" />Gender:
 				<label for="maleGender">Male</label>
 				<input type="radio" id="maleGender" name="varRadio" value="maleGender" checked />
 				<label for="femaleGender">Female</label>
@@ -77,6 +77,7 @@
 				localStorage.setItem("PhoneNumber",document.getElementById("phone").value);
 				localStorage.setItem("EmailAddress",document.getElementById("emailRegistered").value);
 				localStorage.setItem("Password",document.getElementById("passwordRegister").value);
+				localStorage.setItem("DOB",document.getElementById("DOB_Reg").value);
 				localStorage.setItem("IsSignedIn", true);
 			}
 			function loginValidate(){
