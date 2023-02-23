@@ -18,6 +18,7 @@ YSA Tools will focus on:
 
 ### Key Features Long-Term (Post CS 260):
 * SMS Broadcasting Polls (Send text messages with response polls)
+* Text message and email address verification for account recovery
 * Birthday List Generation
 * Ward Notifications
 * Ward Calendars
