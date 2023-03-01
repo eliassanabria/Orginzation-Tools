@@ -13,7 +13,8 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 	</head>
-	<body>
+	<body onload=LoadJS()>
+		
 		<title id="pageTitle">YSA Tools Portal</title>
 		<header class="page-Header">Welcome to YSA Tools</header>
 		<h1 class="Form_Title"><div id="FormTitleHead">Login</div></h1>
@@ -55,11 +56,30 @@
 			  </form>
 
 		</div>
-		
-		  
-		  
+		<div>
+			<section class="footCenter">
+				Want to have your ward become a tester?
+				<button id="BetaRegistrationForm" type="button" onclick=toggleBetaForm()>Click here to be notified</button>
+
+			</section>
+			<iframe id="BetaTesterForm" src="https://docs.google.com/forms/d/e/1FAIpQLSfd6jRKCIKLcfvdYurFWkDJCn1c4ezeBAbGBRNrd-LndOAijA/viewform?embedded=true" width="640" height="1860" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+		</div>
 		  
 		  <script type="text/javascript">
+			function toggleBetaForm(){
+				if(document.getElementById("BetaRegistrationForm").innerHTML == "Click here to be notified"){
+					document.getElementById("BetaRegistrationForm").innerHTML = "Hide Form";
+					document.getElementById("BetaTesterForm").style.display="block";
+
+				}
+				else{
+					document.getElementById("BetaRegistrationForm").innerHTML = "Click here to be notified";
+					document.getElementById("BetaTesterForm").style.display="none";
+				}
+			}
+			function LoadJS(){
+				document.getElementById("BetaTesterForm").style.display="none";
+			}
 			function showRegister(){
 				document.getElementById("RegisterForm").style.display = "block";
 				document.getElementById("LoginForm").style.display = "none";
