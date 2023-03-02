@@ -13,11 +13,12 @@ For the startup application that will be used in CS 260, the sub-application wil
 YSA Tools will focus on:
 * Ward Directory
 * Online status / last seen
-* Direct chat messages
+* ~~Direct chat messages~~
 * Browser push notifications 
 
 ### Key Features Long-Term (Post CS 260):
 * SMS Broadcasting Polls (Send text messages with response polls)
+* Text message and email address verification for account recovery
 * Birthday List Generation
 * Ward Notifications
 * Ward Calendars
@@ -42,3 +43,15 @@ URL: https://organizationtools.org
 
 ## Goals:
 Have subdomains for different organizations that use the application. Potentially for businesses, have them integrate their own Single Sign-on for select applications.
+
+# Logs:
+### 23 February 2023
+I have removed driect chat messages from the startup specs temporarily to reduce the amout of time it will take to code what has been done so far.
+The startup has been made progress. However to further accelerate the startup, I will now begin to play with React a little so since this application will need room to expand and grow into multiple directions.
+
+### 1 February 2023
+Drop-down status updates and remains if mobile device rotates.
+Status Changes cause status light to change with JS.
+Login and Registration Authentication are stored on local device until services are written.
+Footer is now on both login and directory screens.
+I added some JS and used local storage to facilitate mocking authentication process until the service is written. I also changed the media queries to determine which type of navigation bar is needed at the top of the page. A collapable one for mobile device screens and full naviagtion bar for desktop users.
