@@ -21,7 +21,7 @@
   color: white;
   background-color: #0a2a52;
   justify-content: center;
-  justify-content: center;
+  position: fixed; left: 0px; right: 0px; bottom: 0px;
 }
 body {
   display: flex;
