@@ -45,6 +45,9 @@ URL: https://organizationtools.org
 Have subdomains for different organizations that use the application. Potentially for businesses, have them integrate their own Single Sign-on for select applications.
 
 # Logs:
+### 1 March 2023
+Bug fixes in html footer elements causing footer to not sink to bottom of browser. I have also implemented a small amount of JavaScript to call an api to get fake user data to populate the directory. Progress has also been made on the transition of the React Application version.
+
 ### 23 February 2023
 I have removed driect chat messages from the startup specs temporarily to reduce the amout of time it will take to code what has been done so far.
 The startup has been made progress. However to further accelerate the startup, I will now begin to play with React a little so since this application will need room to expand and grow into multiple directions.
