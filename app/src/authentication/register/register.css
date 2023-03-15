@@ -1,0 +1,11 @@
+#AuthenticationFormHolder{
+    justify-content: center;
+    display: flex;
+    align-items: center;
+}
+.ProfileImageRound{
+    border-radius: 50%;
+    width: 150px;
+    height: 150px;
+
+}
