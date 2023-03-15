@@ -8,6 +8,7 @@ import '../authentication/AuthPopup.css';
 import './directory.css';
 
 export function Directory(props) {
+
   const Authenticated = props.Authenticated;
     //Extract Group ID
     const { id } = useParams();
@@ -20,9 +21,9 @@ export function Directory(props) {
       //Clear the directory grid if page is refreshed. This eliminates duplicate members from showing up.
       LoadingHolder.innerHTML ='<div class="popup"> <div class="popup-inner"><div class="spinner-holder"><div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div></div></div></div></div>';
       if(Authenticated !== AuthState.Authenticated){
-
         gridContainer.innerHTML = "Please log in to view this directory";
         //gridContainer.appendChild();
+        return;
       }
       console.log("Grid is :" + gridContainer);
       
@@ -113,9 +114,11 @@ export function Directory(props) {
     });
 	      return(
         <div>
+          <div id='authPopUp'>
           {Authenticated !== AuthState.Authenticated && 
           <LoginPopupForm targetURL={`./directory`} />
                 }
+          </div>
             <header>
     	<div className="footCenter">
 			<b> {OrganizationName} </b>
