@@ -22,6 +22,7 @@ export function Directory(props) {
       LoadingHolder.innerHTML ='<div class="popup"> <div class="popup-inner"><div class="spinner-holder"><div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div></div></div></div></div>';
       if(Authenticated !== AuthState.Authenticated){
         gridContainer.innerHTML = "Please log in to view this directory";
+        LoadingHolder.innerHTML = '';
         //gridContainer.appendChild();
         return;
       }
@@ -115,9 +116,7 @@ export function Directory(props) {
 	      return(
         <div>
           <div id='authPopUp'>
-          {Authenticated !== AuthState.Authenticated && 
-          <LoginPopupForm targetURL={`./directory`} />
-                }
+         
           </div>
             <header>
     	<div className="footCenter">
