@@ -87,7 +87,7 @@ React.useEffect(() => {
             <div className="user-account-menu">
               <img src={profile_image_url} alt="Profile Picture" className="profile-picture" id='profileImage'/>
               <div className="user-info">
-                {authState === AuthState.Authenticated && (<NavLink to="/users/UserUUID/profile">Welcome, <t id='FirstNameDesktop'>{FirstNameDesktop}</t></NavLink>)}
+                {authState === AuthState.Authenticated && (<NavLink to={`/users/${userID}/profile`}>Welcome, <lable id='FirstNameDesktop'>{FirstNameDesktop}</lable></NavLink>)}
                 {authState === AuthState.Authenticated && (
                 <NavLink className='nav-link' to="settings">Settings</NavLink>)}
                 {authState === AuthState.Authenticated && (
@@ -114,7 +114,7 @@ React.useEffect(() => {
               <div className="user-account">
                 <img src={profile_image_url} alt="Profile Picture" className="profile-picture" id='profileImage'/>
                 <div className="user-info">
-                <NavLink to="/users/UserUUID/profile">Welcome, <t id="FirstNameDesktop">{FirstNameDesktop}</t></NavLink>
+                <NavLink to="/users/UserUUID/profile">Welcome, <lable id="FirstNameDesktop">{FirstNameDesktop}</lable></NavLink>
                   <NavLink className='nav-link' to="settings">Settings</NavLink>
                   <select id="status-dropdown-mobile" onChange="updateStatusMobile()" name="status">
                     <option value="Online" className="status-item online">Online</option>
@@ -159,19 +159,20 @@ React.useEffect(() => {
 }
 function Footer() {
   return(
-  <footer className="tools-footer" style={{}}>
+  <footer className="tools-footer">
         
   <div className="footCenter">
-    <h9>This application is not spported nor endorsed by the Church of Jesus Christ of Latter-day Saints</h9>
+    <h6>This application is not spported nor endorsed by the Church of Jesus Christ of Latter-day Saints</h6>
   </div>
   <div className="footCenter">
   <button className="button" onClick={() => window.location.href='https://pysa169.eliassanabria.com'}>Provo YSA 169 Ward Login</button>
   </div>
   <div className="footCenter">
-    <h9>This webiste is under construction</h9>
+    <h6>This webiste is under construction</h6>
   </div>
 </footer>);
 }
+
 
 
 export default App;

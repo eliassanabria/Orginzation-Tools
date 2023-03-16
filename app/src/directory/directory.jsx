@@ -112,6 +112,7 @@ export function Directory(props) {
           LoadingHolder.innerHTML = '';
           console.error("There was a problem fetching the user data:", error);
         });
+        console.log("Successful fetch of data");
     });
 	      return(
         <div>

@@ -161,6 +161,64 @@ secureApiRouter.post('/services/uploads/profiles',upload.single('image'), (req, 
   }
   //then extract username and create URL path, convert and uplaod to s3.
 });
+
+secureApiRouter.get('/groups/list', async (req, res)=>{
+  const token = extractAuth(req);
+  const userToken = await DB.getUserByToken(token);
+  const user = await DB.getUserByAlias(userToken.alias);
+  const EnrollementList = await DB.getGroupsEnrollmentList(user._id);
+  const groupList = [];
+  for(let i = 0; i < EnrollementList.length; ++i){
+    const tempOrg = await DB.getOrgDoc(EnrollementList[i].group_enrollment_ID_Associated.toString());
+    console.log(tempOrg);
+    const tempOrgRoles = EnrollementList[i].roles;
+    const orgRolesTempList =[];
+    for(let x = 0; x < tempOrgRoles.length; ++x){
+      //call get role by id
+      const tempRole = await DB.getOrgRoleByRoleID(tempOrgRoles[x]);
+      //extract name and push to list;
+      const tempRoleName = tempRole.role_title;
+      orgRolesTempList.push(tempRoleName);
+    }
+
+    console.log(tempOrgRoles);
+    //make object values for html page to be injected to the table:
+    const dateString = EnrollementList[i].enrollment_date.toString();
+    const tIndex = dateString.indexOf('T');
+    const datePart = dateString.substring(0, tIndex);
+    let roles = '';
+    for(let r = 0; r < orgRolesTempList.length; ++r){
+      if(r === orgRolesTempList.length-1){
+        roles += orgRolesTempList[r];
+      }else{
+        roles += orgRolesTempList[r] + ', '
+      }
+    }
+    const groupLine = {
+      id:tempOrg._id.toString(),
+      OrganizationName: tempOrg.group_name,
+      Description: tempOrg.group_description,
+      MemberSince: datePart,
+      MyOrgRoles: roles
+    }
+    groupList.push(groupLine);
+  }
+  if(groupList){
+    res.status(200).send({
+      groupList
+    });
+    return;
+  }
+  else{
+    res.status(200).send({
+      msg: 'No groups enrolled'
+    });
+    return;
+  }
+
+})
+
+
 // getDirectory
 secureApiRouter.get('/:groupID/directory', async (req, res) => {
   //get current user
@@ -173,13 +231,7 @@ secureApiRouter.get('/:groupID/directory', async (req, res) => {
   const Organization = await DB.getOrgDoc(groupID);
   const directoryBuilt = [];
   const isInGroup = await DB.verifyUserInGroup(groupID,user._id);
-  // res.send({
-  //   isInGroupCurrent: isInGroup,
-  //   user,
-  //   directoryIDs,
-  //   size: directoryIDs.length
-
-  // })
+ 
   if(isInGroup){
     //success, use for_loop and build the directory
     for(x = 0; x < directoryIDs.length; ++x){

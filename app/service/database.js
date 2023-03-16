@@ -29,6 +29,8 @@ const client = new MongoClient(url);
 const userCollection = client.db('Organization-Tools-DB').collection('Users');
 const AuthTokenCollection = client.db('Organization-Tools-DB').collection('AuthTokens');
 const organizationsCollection = client.db('Organization-Tools-DB').collection('organization_groups');
+const organizations_Enrollment_Collection = client.db('Organization-Tools-DB').collection('organization_enrollement');
+const organizationRolesCollection = client.db('Organization-Tools-DB').collection('organizations_roles');
 
 
 function getUserByEmail(email) {
@@ -94,6 +96,12 @@ function DeleteAuthToken(tokenPassed){
   AuthTokenCollection.deleteOne({token: tokenPassed});
 }
 
+async function getGroupsEnrollmentList(userID){
+  const enrollmentListData = await organizations_Enrollment_Collection.find({enrollee_id: userID});
+  const enrollmentList = await enrollmentListData.toArray();
+  return enrollmentList;
+}
+
 function getHighScores() {
   const query = {};
   const options = {
@@ -102,6 +110,12 @@ function getHighScores() {
   };
   const cursor = scoreCollection.find(query, options);
   return cursor.toArray();
+}
+
+async function getOrgRoleByRoleID(roleID){
+  const Role = await organizationRolesCollection.findOne({_id: roleID});
+  return Role;
+
 }
 
 async function getOrgDoc(groupID){
@@ -191,4 +205,6 @@ module.exports = {
   getOrgDoc,
   getGroupLables,
   uploadImageToS3,
+  getGroupsEnrollmentList,
+  getOrgRoleByRoleID,
 };
