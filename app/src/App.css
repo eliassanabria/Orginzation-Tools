@@ -1,3 +1,4 @@
+
 .App-header{
   position: sticky;
   top: 0px;
@@ -129,10 +130,9 @@ nav a {
   left: 0;
   right: 0;
   bottom: 0;
-  flex: 0 30px;
+  flex: 0 20px;
   color: white;
   background-color: #0a2a52;
-  justify-content: center;
 }
 
 

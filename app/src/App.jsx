@@ -62,8 +62,6 @@ React.useEffect(() => {
   }
 }, [EmailAddress]);
 
-
-
   
   async function loadProfileImage(){
     var userProfileImage = localStorage.getItem('profile_image_url');
@@ -72,14 +70,26 @@ React.useEffect(() => {
   }
 
   const Login = ()=>{
-       requestAuthPage(true);
+   // const AuthenticationLoginHolder = document.getElementById('AuthenticationLoginHolder');
+    //AuthenticationLoginHolder.innerHTML = <LoginPopupForm targetURL="/home"/> ;
+    requestAuthPage(true);
+  }
+  const closePopup = () => {
+    requestAuthPage(false);
   }
   // const logout = ()=>{
   //   localStorage.setItem("IsSignedIn", false);
   //   window.location.reload();
   // }
 
-  
+  function LoginPopupExit(){
+    return(
+      <div>
+        <button className="close-button" id ="closeBtn"onClick={closePopup}>x</button>
+      </div>
+    )
+  }
+
   return (
     <div className="App">
       <header className="App-header">
@@ -115,24 +125,31 @@ React.useEffect(() => {
                 <img src={profile_image_url} alt="Profile Picture" className="profile-picture" id='profileImage'/>
                 <div className="user-info">
                 <NavLink to="/users/UserUUID/profile">Welcome, <lable id="FirstNameDesktop">{FirstNameDesktop}</lable></NavLink>
-                  <NavLink className='nav-link' to="settings">Settings</NavLink>
-                  <select id="status-dropdown-mobile" onChange="updateStatusMobile()" name="status">
+                {authState === AuthState.Authenticated && (
+                <NavLink className='nav-link' to="settings">Settings</NavLink>)}
+                  {authState === AuthState.Authenticated && (<select id="status-dropdown-mobile" onChange="updateStatusMobile()" name="status">
                     <option value="Online" className="status-item online">Online</option>
                     <option value="Away" className="status-item away">Away</option>
                     <option value="Do Not Disturb" className="status-item dnd">Do Not Disturb</option>
                     <option value="Appear Offline" className="status-item offline">Appear Offline</option>
-                  </select>
+                  </select>)}
                 </div>
               </div>
-              <NavLink className='nav-link' to="6410b886773710f67ea6835b/directory">Directory</NavLink>
-              <NavLink className='nav-link' to="home">My Groups</NavLink>
-              <NavLink  onClick={logout} id="desktopNav">Logout</NavLink>
+              {authState === AuthState.Authenticated && (
+            <NavLink className='nav-link' id='desktopNav' to="6410b886773710f67ea6835b/directory">Directory</NavLink>)}
+            {authState === AuthState.Authenticated && (
+            <NavLink className='nav-link' id="desktopNav" to="home">My Groups</NavLink>)}
+              {authState === AuthState.Authenticated && (
+              <NavLink  onClick={logout} id="desktopNav">Logout</NavLink>)}
+              {authState !== AuthState.Authenticated && (<NavLink onClick={Login}>Login</NavLink>)}
+
             </div>
           </div>
           {loadProfileImage}
           </nav>
       </header>
-      <div id='AuthenticationLoginHolder'>{AuthRequested &&<LoginPopupForm targetURL="/home"/>}</div>
+      <div id='AuthenticationLoginHolder'>{AuthRequested &&<LoginPopupForm targetURL="/home" closePopup={closePopup}/> }</div>
+      {/* <div>{AuthRequested && <LoginPopupExit/> }</div> */}
       <Routes>
       <Route
           path='/'
@@ -172,6 +189,8 @@ function Footer() {
   </div>
 </footer>);
 }
+
+
 
 
 

@@ -119,7 +119,7 @@ export function Register(props) {
       const body = await response.json();
       alert(`⚠ Error: ${body.msg}`);
     }
-
+    window.location.href = "/home";
     //Upload image to S3 Bucket
   }
 
@@ -167,7 +167,7 @@ const backToLogin = ()=>{
       {image && <img src={image} alt="Preview" className='ProfileImageRound' />}
       <br/>
       <br/>
-      <input type="file" onChange={handleImageChange} />
+      <input type="file" onChange={handleImageChange} disabled/> Image Upload Not working yet... stay tuned!
     <br/>
     <br/>
       <label htmlFor="email">Email: </label>

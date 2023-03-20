@@ -4,6 +4,7 @@ export function LoginPopupForm(props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const targetURL = props.targetURL;
+  const closePopup = props.closePopup;
 
   async function loginUser(event) {
     event.preventDefault();
@@ -89,6 +90,7 @@ export function LoginPopupForm(props) {
         <br />
         <input type="button" value="Register" onClick={() => { window.location.href=`/register`}}/>
         <input type="submit" value="Login" />
+        <button onClick={closePopup}>Cancel</button>
         <br />
         <br />
     </form>
