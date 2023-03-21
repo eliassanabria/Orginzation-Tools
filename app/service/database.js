@@ -31,6 +31,7 @@ const AuthTokenCollection = client.db('Organization-Tools-DB').collection('AuthT
 const organizationsCollection = client.db('Organization-Tools-DB').collection('organization_groups');
 const organizations_Enrollment_Collection = client.db('Organization-Tools-DB').collection('organization_enrollement');
 const organizationRolesCollection = client.db('Organization-Tools-DB').collection('organizations_roles');
+const organizationSurveys = client.db('Organization-Tools-DB').collection('organization-questionares');
 
 
 function getUserByEmail(email) {
@@ -50,11 +51,13 @@ function getUserByPhoneNumber(phone_number){
 }
 
 async function createAuthTokenForUser(alias){
-  const expiriation = new Date() + 30;
+  var date = new Date(); // Now
+  date.setDate(date.getDate() + 30);
+  
   const authToken  = {
     token: uuid.v4(),
     alias: alias,
-    expiriation: expiriation,
+    expiriation: date,
   };
   await AuthTokenCollection.insertOne(authToken);
 
@@ -88,6 +91,14 @@ async function createUser(profile_image_url, first_name,
   return user;
 }
 
+async function addMemberToOrg(orgUUID,memberUUID){
+  await organizationsCollection.updateOne(
+    { "_id": new ObjectId(orgUUID) }, // filter to match the document
+    { $push: { "group_members": new ObjectId(memberUUID) } } // update to push the new member ID to the array
+ )
+ return true;
+}
+
 function addScore(score) {
   scoreCollection.insertOne(score);
 }
@@ -100,6 +111,41 @@ async function getGroupsEnrollmentList(userID){
   const enrollmentListData = await organizations_Enrollment_Collection.find({enrollee_id: userID});
   const enrollmentList = await enrollmentListData.toArray();
   return enrollmentList;
+}
+//Create new enrollement for user:
+async function enrollNewUser(groupUUID, memberUUID, standardRoleUUID){
+  organizations_Enrollment_Collection.insertOne(
+    {
+       "group_enrollment_ID_Associated": new ObjectId(groupUUID),
+       "enrollee_id": new ObjectId(memberUUID),
+       "enrollment_date": new Date(),
+       "roles": [new ObjectId(standardRoleUUID)]
+    }
+ )
+ 
+}
+async function addRoleToMemberInOrg(groupUUID, memberUUID, roleUUID){
+  await organizations_Enrollment_Collection.updateOne(
+    { 
+       "_id": ObjectId(groupUUID),
+       "enrollee_id": new ObjectId(memberUUID) 
+    }, // filter to match the document with the given _id and enrollee_id
+    { $push: { "roles": new ObjectId(roleUUID) } } // update to push the new role ID to the roles array
+ )
+}
+async function removeRoleFromMemberInOrg(groupUUID,memberUUID,roleUUID){
+  await organizations_Enrollment_Collection.updateOne(
+    { 
+       "_id": ObjectId(groupUUID),
+       "enrollee_id": ObjectId(memberUUID) 
+    }, // filter to match the document with the given _id and enrollee_id
+    { $pull: { "roles": ObjectId(roleUUID) } } // update to remove the role ID from the roles array
+ )
+ return true;
+}
+async function getBaseMembershipIDFromOrgID(groupUUID){
+  const baseMemberID = await organizationsCollection.findOne({_id: new ObjectId(groupUUID)}, {base_role: 1});
+return baseMemberID.base_role.toString();
 }
 
 function getHighScores() {
@@ -119,14 +165,17 @@ async function getOrgRoleByRoleID(roleID){
 }
 
 async function getOrgDoc(groupID){
-  return await organizationsCollection.findOne({_id: ObjectId(groupID)});
+  return await organizationsCollection.findOne({_id: new ObjectId(groupID)});
 }
 function getGroupLables(groupID){
   return null;
 }
+async function getOrgDocByJoinCode(joinCode){
+  return await organizationsCollection.findOne({group_join_code: joinCode});
+}
 
 async function verifyUserInGroup(groupID, userID) {
-  const directory = await organizationsCollection.findOne({ _id: ObjectId(groupID) });
+  const directory = await organizationsCollection.findOne({ _id: new ObjectId(groupID) });
   const members = directory.group_members.map(member => member.toString());
   const userIDString = userID.toString();
   if (members.includes(userIDString)) {
@@ -134,10 +183,24 @@ async function verifyUserInGroup(groupID, userID) {
   }
   return false;
 }
+async function checkEnrollmentExists(groupId, userId) {
+  const enrollment = await organizations_Enrollment_Collection.findOne({
+    group_enrollment_ID_Associated: groupId,
+    enrollee_id: userId,
+  });
+  return enrollment !== null;
+}
+
+
+async function getRolesIDsOfUserInGroup(userID,groupID){
+  const EnrollementFound = await organizations_Enrollment_Collection.findOne({group_enrollment_ID_Associated: new ObjectId(groupID),enrollee_id: new ObjectId(userID)});
+  const roleIDs = EnrollementFound.roles;
+  return roleIDs;
+}
 
 
 async function getDirectoryUsersIDs(groupID) {
-  const directory = await organizationsCollection.findOne({_id: ObjectId(groupID)});
+  const directory = await organizationsCollection.findOne({_id: new ObjectId(groupID)});
   
   let members = directory.group_members;
   //return members;
@@ -165,6 +228,34 @@ async function getDirectoryUsersIDs(groupID) {
   }).toArray();
   return members;
 }
+
+async function getRequiredSurveysGroups(groupUUID) {
+  const surveyIDsFound = await organizationSurveys
+    .find({ is_required: true, group_origin: new ObjectId(groupUUID) }, { _id: 1 })
+    .toArray();
+
+  const surveyIDStrings = surveyIDsFound.map((survey) => survey._id.toString());
+  console.log(surveyIDStrings);
+  return surveyIDStrings;
+}
+
+async function checkDocumentExists(documentOwner, survey_origin) {
+  //console.log("document_owner:", documentOwner);
+  //console.log("survey_origin:", survey_origin);
+  const documentExists = await organizationSurveys.findOne({
+  survey_origin: new ObjectId(survey_origin),
+  document_type: 'Questionnaire_Response',
+  document_owner: new ObjectId(documentOwner),
+  }, {_id: 1});
+
+  //console.log("documentExists:", documentExists);
+  
+  return !documentExists;
+}
+
+
+
+//async function getSurveyHTML()
 
 
 const s3 = new AWS.S3();
@@ -198,13 +289,23 @@ module.exports = {
   getUserByToken,
   createUser,
   DeleteAuthToken,
+  getOrgDocByJoinCode,
+  addMemberToOrg,
+  enrollNewUser,
   addScore,
   getHighScores,
   getDirectoryUsersIDs,
   verifyUserInGroup,
+  checkEnrollmentExists,
+  addRoleToMemberInOrg,
+  removeRoleFromMemberInOrg,
   getOrgDoc,
   getGroupLables,
   uploadImageToS3,
   getGroupsEnrollmentList,
   getOrgRoleByRoleID,
+  getRolesIDsOfUserInGroup,
+  getBaseMembershipIDFromOrgID,
+  getRequiredSurveysGroups,
+  checkDocumentExists,
 };

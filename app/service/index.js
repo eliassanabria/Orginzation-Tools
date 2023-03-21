@@ -1,4 +1,3 @@
-const { ObjectId } = require('mongodb')
 
 //const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
@@ -165,6 +164,9 @@ secureApiRouter.post('/services/uploads/profiles',upload.single('image'), (req, 
 secureApiRouter.get('/groups/list', async (req, res)=>{
   const token = extractAuth(req);
   const userToken = await DB.getUserByToken(token);
+  //Insert validate token
+
+  
   const user = await DB.getUserByAlias(userToken.alias);
   const EnrollementList = await DB.getGroupsEnrollmentList(user._id);
   const groupList = [];
@@ -247,11 +249,27 @@ secureApiRouter.get('/:groupID/directory', async (req, res) => {
       //Fetch questionaire and set the secondary lables
       const lable2 = getLables(groupID,currUser._id);
       //Fetch roles from roles table: for now use survey responses for the roles
+      const roleIDsList = await DB.getRolesIDsOfUserInGroup(user._id.toString(),Organization._id.toString());
+      //With roleIDsList we have the object ids of the roles of the current user, now we get the titles for each one.
+      var rolesArray = [];
+      for(let x = 0; x < roleIDsList.length; ++ x){
+        const result = await DB.getOrgRoleByRoleID(roleIDsList[x]);
+        rolesArray.push(result.role_title);
+      }
+      //Put roles into a string with ', ' between
+      let roles = '';
+      for(let r = 0; r < rolesArray.length; ++r){
+        if(r === rolesArray.length-1){
+          roles += rolesArray[r];
+        }else{
+          roles += rolesArray[r] + ', '
+        }
+      }
 
 
       const userObject = {name: currUser_display_name,
         secondary_lable: lable2,
-         roles: 'User_Roles',
+         roles: roles,
          profile_image_url: currUser.profile_image_url,
          id: currUser._id,
          
@@ -271,11 +289,120 @@ secureApiRouter.get('/:groupID/directory', async (req, res) => {
   });
 });
 
+//Join Request:
+secureApiRouter.post('/groups/join/:joinCode',async(req,res) =>{
+  const token = extractAuth(req);
+  //this get the user's token object
+  const userToken = await DB.getUserByToken(token);
+  //Validate Token
+
+  //Extract user from with alias:
+  const User = await DB.getUserByAlias(userToken.alias);
+  //Get Group Org Doc:
+  const OrgDocs = await DB.getOrgDocByJoinCode(req.params.joinCode);
+  const requiresSurveyEnrollemnt = OrgDocs.survey_required;
+  //Check if user is already in group
+  const is_enrolled = await DB.checkEnrollmentExists(OrgDocs._id,User._id);
+  if(is_enrolled){
+    res.status(409).send({msg:'User already enrolled in group!'})
+    return;
+  }
+
+  //check if user is banned
+
+  //Join Group
+  const enrollSuccess = joinGroup(OrgDocs._id.toString(),User._id.toString());
+  if(enrollSuccess){
+    res.status(200).send({groupID: OrgDocs._id});
+  }
+  else{
+    res.status(500);
+  }
+  return;
+  
+});
+
+//Validate the user has no pending required surveys set by group leaders
+secureApiRouter.get('/:groupID/membership/validate', async(req,res) =>{
+  const token = extractAuth(req);
+  //this get the user's token object
+  const userToken = await DB.getUserByToken(token);
+  //Validate Token
+
+  //Extract user from with alias:
+  const User = await DB.getUserByAlias(userToken.alias);
+  const requiredSurveys = await DB.getRequiredSurveysGroups(req.params.groupID);
+  var survey_pending = [];
+  //console.log(requiredSurveys);
+  for(let x = 0; x < requiredSurveys.length; ++x){
+    const is_not_taken = await DB.checkDocumentExists(User._id.toString(), requiredSurveys[x]);
+    console.log(is_not_taken);
+     if(is_not_taken){
+      survey_pending.push(requiredSurveys[x]);
+     }
+  }
+  if(survey_pending.length === 0){
+    res.status(200).send({msg:'OK'});
+    return;
+  }
+  else{
+    res.status(412).send({
+      data: survey_pending,
+    })
+    return;
+  }
+});
+//Join Request Required Form:
+secureApiRouter.get('/:groupID/surveys/:surveyDocumentID',async(req,res) =>{
+  const token = extractAuth(req);
+  const userToken = await DB.getUserByToken(token);
+  //Validate Token
+
+ ////////const formHTML = await DB.
+
+});
+//Join Request:
+//Can be either after submittion of join survey or no survye required.
+secureApiRouter.post('/:groupID/surveys/:surveyDocumentID/submit',async(req,res) =>{
+  const token = extractAuth(req);
+  const userToken = await DB.getUserByToken(token);
+  //Validate Token
+
+
+});
+
 // SubmitScore
 secureApiRouter.post('/score', async (req, res) => {
   await DB.addScore(req.body);
   const scores = await DB.getHighScores();
   res.send(scores);
+});
+
+//Get the info on group requesting to join and verify they are not a member of the group.
+secureApiRouter.get('/group/:JoinCode/info', async(req,res)=>{
+  const token = extractAuth(req);
+  const userToken = await DB.getUserByToken(token);
+  const User = await DB.getUserByAlias(userToken.alias);
+  //validate Tokens
+  const OrgDocs = await DB.getOrgDocByJoinCode(req.params.JoinCode);
+  const User_Owner = await DB.getUserBy_id(OrgDocs.group_owner);
+  //Check enrollment:
+  const is_enrolled = await DB.checkEnrollmentExists(OrgDocs._id,User._id);
+  if(is_enrolled){
+    res.status(409).send({msg: 'User already Enrolled!'});
+    return;
+  }
+  res.status(200).send(
+   {
+    group_name: OrgDocs.group_name,
+    group_description: OrgDocs.group_description,
+    group_creation: OrgDocs.group_creation_date,
+    member_count: OrgDocs.group_members.length,
+    survey_required: OrgDocs.survey_required,
+    survey_id: OrgDocs.survey_id,
+    owner_name: User_Owner.preferred_name,
+    owner_contact: User_Owner.email,
+  })
 });
 
 // Default error handler
@@ -313,6 +440,17 @@ function extractAuth(req){
 async function getLables(groupID,currUserID){
   const groupLables = await DB.getGroupLables(groupID);
   return '';
+}
+
+async function joinGroup(groupUUID, userUUID){
+  //get base membership level
+  const baseMemberID = await DB.getBaseMembershipIDFromOrgID(groupUUID);
+  //Add user to group Member list:
+  await DB.addMemberToOrg(groupUUID,userUUID);
+  //Create new enrollement document
+  await DB.enrollNewUser(groupUUID, userUUID,baseMemberID);
+  //Send enrollment completed:
+  return true;
 }
 
 new PeerProxy(httpService);

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom'
-import LoginPopupForm from '../authentication/PopupAuthenticationPrompt';
 import { AuthState } from '../authentication/login/AuthState'
 
 import '../loaderContainer.css';
@@ -13,8 +12,11 @@ export function Directory(props) {
     //Extract Group ID
     const { id } = useParams();
     const[OrganizationName, setOrgName] = useState(localStorage.getItem('Recent-Org-Directory-Name') || 'Organization Name');
-  
+
+
     useEffect(()=>{
+
+
       const gridContainer = document.getElementById("directory-grid");
       const LoadingHolder = document.getElementById('LoadingHolder');
       gridContainer.innerHTML='';
@@ -26,8 +28,30 @@ export function Directory(props) {
         //gridContainer.appendChild();
         return;
       }
-      console.log("Grid is :" + gridContainer);
+      //console.log("Grid is :" + gridContainer);
       
+      fetch("/api/" + id + '/membership/validate', {
+        headers:{
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+    }})
+    .then(response=>{
+      if (response.status === 412) {
+        //console.log("412 missing data");
+    
+        //get surveyIDs
+        response.json().then(responseBody => {
+          const survey_array = Array.from(responseBody.data);
+          const confirmed = window.confirm("Looks like you have " + survey_array.length + " surveys before you can access this page.\nClick continue to take the survey!", "Continue");
+          if(confirmed){
+            window.location.href = ('/' + id + '/surveys/' + survey_array[0]);
+          }
+        });
+        return;
+      } else {
+    
+      }
+    })
+
       const apiUrl = "/api/" + id + '/directory';
       //var directoryCell = gridContainer.children[0];
       //gridContainer = "";
@@ -45,9 +69,9 @@ export function Directory(props) {
         })
         .then(responseBody => {
           const users = Array.from(responseBody.data); // Create an array from the JSON data
-          console.log(users); // This will log an array of user objects to the console
+          //console.log(users); // This will log an array of user objects to the console
           setOrgName(responseBody.OrgName);
-          console.log("There are " + users.length + " from api call");
+          //console.log("There are " + users.length + " from api call");
 
           for (let i = 0; i < users.length; i++) {
               const item = users[i];
