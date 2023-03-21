@@ -10,7 +10,7 @@ import { Home } from './home/home';
 import { Profile } from './profile/profile';
 import { NotFound } from './errors/404/404';
 import { AuthState } from './authentication/login/AuthState';
-
+import {SurveyCollection} from './surveys/SurveyCollection';
 
 import './loaderContainer.css'
 import './App.css';
@@ -136,11 +136,11 @@ React.useEffect(() => {
                 </div>
               </div>
               {authState === AuthState.Authenticated && (
-            <NavLink className='nav-link' id='desktopNav' to="6410b886773710f67ea6835b/directory">Directory</NavLink>)}
+            <NavLink className='nav-link' to="6410b886773710f67ea6835b/directory">Directory</NavLink>)}
             {authState === AuthState.Authenticated && (
-            <NavLink className='nav-link' id="desktopNav" to="home">My Groups</NavLink>)}
+            <NavLink className='nav-link' to="home">My Groups</NavLink>)}
               {authState === AuthState.Authenticated && (
-              <NavLink  onClick={logout} id="desktopNav">Logout</NavLink>)}
+              <NavLink  onClick={logout} >Logout</NavLink>)}
               {authState !== AuthState.Authenticated && (<NavLink onClick={Login}>Login</NavLink>)}
 
             </div>
@@ -166,6 +166,7 @@ React.useEffect(() => {
         <Route path='/home' element={<Home Authenticated={authState}/>}/>
         <Route path='/register' element={<Register/>}/>
         <Route path='/users/:uuid/profile' element={<Profile Authenticated={authState}/>}/>
+        <Route path='/:groupID/surveys/:surveyID' element={<SurveyCollection Authenticated={authState}/>}/>
         <Route path='*' element={<NotFound/>}/>
       </Routes>
       

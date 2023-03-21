@@ -255,7 +255,10 @@ async function checkDocumentExists(documentOwner, survey_origin) {
 
 
 
-//async function getSurveyHTML()
+async function getSurveyHTML(groupUUID, survey_id){
+  const survey_object = await organizationSurveys.findOne({group_origin: new ObjectId(groupUUID), _id: new ObjectId(survey_id)});
+  return survey_object;
+}
 
 
 const s3 = new AWS.S3();
@@ -308,4 +311,6 @@ module.exports = {
   getBaseMembershipIDFromOrgID,
   getRequiredSurveysGroups,
   checkDocumentExists,
+  getSurveyHTML,
+
 };

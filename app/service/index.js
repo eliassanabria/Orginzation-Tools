@@ -6,10 +6,13 @@ const app = express();
 const DB = require('./database.js');
 const { PeerProxy } = require('./peerProxy.js');
 const multer = require('multer');
+const { ObjectId } = require('mongodb/lib/bson.js');
+const bodyParser = require('body-parser');
 
 //const axios = require('axios');
 const upload = multer();
 const authCookieName = 'token';
+app.use(bodyParser.urlencoded({ extended: false }));
 
 // The service port may be set on the command line
 const port = process.argv.length > 2 ? process.argv[2] : 3000;
@@ -355,10 +358,16 @@ secureApiRouter.get('/:groupID/membership/validate', async(req,res) =>{
 //Join Request Required Form:
 secureApiRouter.get('/:groupID/surveys/:surveyDocumentID',async(req,res) =>{
   const token = extractAuth(req);
+  const {groupID, surveyDocumentID} = req.params;
   const userToken = await DB.getUserByToken(token);
   //Validate Token
 
- ////////const formHTML = await DB.
+  //get survey document from database
+ const surveyDocument = await DB.getSurveyHTML(groupID,surveyDocumentID);
+ //convert document into html:
+ 
+
+  res.status(200).send({FormData:surveyDocument});
 
 });
 //Join Request:
@@ -366,7 +375,25 @@ secureApiRouter.get('/:groupID/surveys/:surveyDocumentID',async(req,res) =>{
 secureApiRouter.post('/:groupID/surveys/:surveyDocumentID/submit',async(req,res) =>{
   const token = extractAuth(req);
   const userToken = await DB.getUserByToken(token);
+  const {groupID, surveyDocumentID} = req.params;
   //Validate Token
+  const surveyDocumentTemplate = await DB.getSurveyHTML(groupID,surveyDocumentID);
+  const User = await DB.getUserByAlias(userToken.alias);
+  //check for existing submission:
+
+  //map responses to question ids
+  const body = await req.body;
+  const first = body.formData['6419b2f3686b594aca8af2d6'];
+console.log(first);
+  //create submission object
+  const newSubmission ={
+    _id: new ObjectId(),
+    group_origin:groupID,
+    document_type: 'Questionnaire_Response',
+    document_owner: User._id,
+    survey_origin: surveyDocumentTemplate._id,
+
+  }
 
 
 });
