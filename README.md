@@ -77,6 +77,8 @@ Have subdomains for different organizations that use the application. Potentiall
 
 
 # Logs:
+### 21 March 2023
+Entire project is now in react, authentication is complete and registering is loging in is functional. Rendering group lists based on enrollment are present. Loading directories fully functional as well as redirecting a user to take required surveys to view the directory. Surveys are fetched as a document and rendered live on the client. However submission of the survey doesn't store on the database. On the directory and on the groups list, roles are rendered in the objects. Directory lable_2 objects are not rendered until the submission survey stores data on the Database.
 ### 1 March 2023
 Bug fixes in html footer elements causing footer to not sink to bottom of browser. I have also implemented a small amount of JavaScript to call an api to get fake user data to populate the directory. Progress has also been made on the transition of the React Application version.
 
