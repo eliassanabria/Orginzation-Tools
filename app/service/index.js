@@ -42,7 +42,7 @@ apiRouter.post('/auth/register', async (req, res) => {
   }
   else {
     //Create expected s3 image destination
-    const profile_image_url = " ";
+    const profile_image_url = "https://media.licdn.com/dms/image/C4D03AQEsy3vazJSOpQ/profile-displayphoto-shrink_800_800/0/1597247840181?e=2147483647&v=beta&t=AfLvDe1FzLUdyDvPygpD_tV4VYFflHz7U9ae792EDs0";
 
     const user = await DB.createUser(profile_image_url, req.body.first_name,
       req.body.last_name,req.body.preferred_name, req.body.share_pref_name, req.body.phone, req.body.share_phone,
@@ -250,9 +250,9 @@ secureApiRouter.get('/:groupID/directory', async (req, res) => {
         currUser_display_name = currUser.first_name + ' ' + currUser.last_name;        
       }
       //Fetch questionaire and set the secondary lables
-      const lable2 = getLables(groupID,currUser._id);
+      const lable2 = await getLables(groupID,currUser._id);
       //Fetch roles from roles table: for now use survey responses for the roles
-      const roleIDsList = await DB.getRolesIDsOfUserInGroup(user._id.toString(),Organization._id.toString());
+      const roleIDsList = await DB.getRolesIDsOfUserInGroup(currUser._id.toString(),Organization._id.toString());
       //With roleIDsList we have the object ids of the roles of the current user, now we get the titles for each one.
       var rolesArray = [];
       for(let x = 0; x < roleIDsList.length; ++ x){
@@ -380,22 +380,46 @@ secureApiRouter.post('/:groupID/surveys/:surveyDocumentID/submit',async(req,res)
   const surveyDocumentTemplate = await DB.getSurveyHTML(groupID,surveyDocumentID);
   const User = await DB.getUserByAlias(userToken.alias);
   //check for existing submission:
-
+  const alreadyExists = await DB.checkDocumentExists(User._id, surveyDocumentTemplate._id)
+  if(!alreadyExists){
+    res.status(409).send({msg: 'Survey already taken. Please delete response to resubmit.'});
+    return;
+  }
   //map responses to question ids
   const body = await req.body;
-  const first = body.formData['6419b2f3686b594aca8af2d6'];
-console.log(first);
+  const responses = body.data;
+  const survey_questions = surveyDocumentTemplate.survey_questions;
+  for(let index = 0; index < survey_questions.length; ++index){
+    const current_question_id = survey_questions[index].question_id.toString();
+
+    if(responses[current_question_id]){
+      console.log("This question was answered.")
+      survey_questions[index].value = responses[current_question_id];
+    }
+    else if(survey_questions[index].is_required){
+      //throw exception missing required field
+      res.status(400).send({
+        msg: 'Missing required question response for: ' + survey_questions[index].label,
+      })
+      return;
+    }
+  }
   //create submission object
   const newSubmission ={
     _id: new ObjectId(),
-    group_origin:groupID,
+    group_origin: new ObjectId(groupID),
     document_type: 'Questionnaire_Response',
     document_owner: User._id,
     survey_origin: surveyDocumentTemplate._id,
-
+    survey_questions: survey_questions,
+    document_title: surveyDocumentTemplate.document_title
   }
-
-
+  console.log(newSubmission);
+  if(await DB.addUserSubmission(newSubmission)){
+    res.status(200).send({
+      msg: 'Your response has been recorded.',
+    })
+  }
 });
 
 // SubmitScore
@@ -412,6 +436,11 @@ secureApiRouter.get('/group/:JoinCode/info', async(req,res)=>{
   const User = await DB.getUserByAlias(userToken.alias);
   //validate Tokens
   const OrgDocs = await DB.getOrgDocByJoinCode(req.params.JoinCode);
+  if(!OrgDocs){
+    //Null
+    res.status(404).send({msg: 'Group not found, please verify group code and try again'})
+    return;
+  }
   const User_Owner = await DB.getUserBy_id(OrgDocs.group_owner);
   //Check enrollment:
   const is_enrolled = await DB.checkEnrollmentExists(OrgDocs._id,User._id);
@@ -466,7 +495,7 @@ function extractAuth(req){
 }
 async function getLables(groupID,currUserID){
   const groupLables = await DB.getGroupLables(groupID);
-  return '';
+  return 'Test lable';
 }
 
 async function joinGroup(groupUUID, userUUID){

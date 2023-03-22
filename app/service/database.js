@@ -253,6 +253,11 @@ async function checkDocumentExists(documentOwner, survey_origin) {
   return !documentExists;
 }
 
+async function addUserSubmission(submission){
+  await organizationSurveys.insertOne(submission);
+return true;
+}
+
 
 
 async function getSurveyHTML(groupUUID, survey_id){
@@ -312,5 +317,6 @@ module.exports = {
   getRequiredSurveysGroups,
   checkDocumentExists,
   getSurveyHTML,
+  addUserSubmission,
 
 };
