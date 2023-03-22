@@ -17,6 +17,7 @@ import './App.css';
 
 function App() {
   const [AuthRequested,requestAuthPage] = useState(false);
+  const [userStatus, setUserStatus] = useState('Appear Offline');
   const [EmailAddress, setEmail] = useState(localStorage.getItem('email') || '');
   const [userAlias, setUserAlias] = React.useState(localStorage.getItem('Alias') || '');
   const [userID, setID] = useState(localStorage.getItem('userID'));
@@ -32,7 +33,9 @@ function App() {
     ).then(()=> localStorage.clear()
     );
   }
-
+  const handleStatusChange = (event) => {
+    setUserStatus(event.target.value);
+  };
   //TODO: Authentication verification:
 // Asynchronously determine if the user is authenticated by calling the service
 const [authState, setAuthState] = React.useState(AuthState.Unknown);
@@ -57,7 +60,7 @@ React.useEffect(() => {
         setID(response?.id);
         localStorage.setItem('id',response.id);
         //Socket Connections will go here for only authenticated users.
-        
+
       });
   } else {
     setAuthState(AuthState.Unauthenticated);
@@ -84,14 +87,6 @@ React.useEffect(() => {
   //   window.location.reload();
   // }
 
-  function LoginPopupExit(){
-    return(
-      <div>
-        <button className="close-button" id ="closeBtn"onClick={closePopup}>x</button>
-      </div>
-    )
-  }
-
   return (
     <div className="App">
       <header className="App-header">
@@ -103,12 +98,12 @@ React.useEffect(() => {
                 {authState === AuthState.Authenticated && (
                 <NavLink className='nav-link' to="settings">Settings</NavLink>)}
                 {authState === AuthState.Authenticated && (
-                <select id="status-dropdown" onChange="updateStatus()" name="status">
-                  <option value="Online" className="status-item online">Online</option>
-                  <option value="Away" className="status-item away">Away</option>
-                  <option value="Do Not Disturb" className="status-item dnd">Do Not Disturb</option>
-                  <option value="Appear Offline" className="status-item offline">Appear Offline</option>
-                </select> )}
+                <select id="status-dropdown" onChange={handleStatusChange} name="status" value={userStatus}>
+                <option value="Online" className="status-item online">Online</option>
+                <option value="Away" className="status-item away">Away</option>
+                <option value="Do Not Disturb" className="status-item dnd">Do Not Disturb</option>
+                <option value="Appear Offline" className="status-item offline">Appear Offline</option>
+              </select>)}
               </div>
             </div>
             {authState === AuthState.Authenticated && (
@@ -129,12 +124,14 @@ React.useEffect(() => {
                 <NavLink to="/users/UserUUID/profile">Welcome, <lable id="FirstNameDesktop">{FirstNameDesktop}</lable></NavLink>
                 {authState === AuthState.Authenticated && (
                 <NavLink className='nav-link' to="settings">Settings</NavLink>)}
-                  {authState === AuthState.Authenticated && (<select id="status-dropdown-mobile" onChange="updateStatusMobile()" name="status">
+                  {authState === AuthState.Authenticated && (
+                    <select id="status-dropdown" onChange={handleStatusChange} name="status" value={userStatus}>
                     <option value="Online" className="status-item online">Online</option>
                     <option value="Away" className="status-item away">Away</option>
                     <option value="Do Not Disturb" className="status-item dnd">Do Not Disturb</option>
                     <option value="Appear Offline" className="status-item offline">Appear Offline</option>
-                  </select>)}
+                  </select>
+                  )}
                 </div>
               </div>
               {authState === AuthState.Authenticated && (
