@@ -55,7 +55,9 @@ React.useEffect(() => {
         setProfileURL(response?.profile_image_url);
         setAuthState(state);
         setID(response?.id);
-        localStorage.setItem('id',response.id)
+        localStorage.setItem('id',response.id);
+        //Socket Connections will go here for only authenticated users.
+        
       });
   } else {
     setAuthState(AuthState.Unauthenticated);

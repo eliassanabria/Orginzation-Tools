@@ -11,18 +11,31 @@ export function SurveyCollection(props) {
   const handleSubmit = async (event)=>{
     event.preventDefault();
     const form = event.target; // get the form element
-    console.log(form);
+    //console.log(form);
 
     const formData = new FormData(form); // create a new FormData object from the form data
-    const submitURL = '/api/' + groupID + '/surveys/' + surveyID + '/submit';    
-    const submissionResponse = await fetch(submitURL,{
-        method:'post',
-        headers:{
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ formData })
-    })
+    const data = Object.fromEntries(formData.entries());
+    console.log(data);
+    
+        const submitURL = '/api/' + groupID + '/surveys/' + surveyID + '/submit';    
+        const submissionResponse = await fetch(submitURL,{
+            method:'post',
+            headers:{
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ data })
+        });
+
+        if (submissionResponse.status !== 200) {
+            const responseBody = await submissionResponse.json();
+            alert('⚠ Error' + submissionResponse.status + ':' + responseBody.msg);
+        } else {
+            // Handle successful response
+            alert('Survey was successfully submitted')
+            window.history.back();
+        }
+            
   }
 
   useEffect(()=>{

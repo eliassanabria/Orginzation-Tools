@@ -77,7 +77,7 @@ async function  handleJoinRequest (event){
   }
   else{
     const body = await groupInfo.json();
-    alert(`⚠ Error: ${body.msg}`);
+    alert(`⚠ Error ${groupInfo.status}: ${body.msg}`);
     setJoinCode('');
   }
 }
