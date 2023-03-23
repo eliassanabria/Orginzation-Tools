@@ -101,7 +101,7 @@ React.useEffect(() => {
     };
 
     sendStatus(); // Send status immediately
-    const intervalId = setInterval(sendStatus, 10000); // Send status every 2 seconds
+    const intervalId = setInterval(sendStatus, 60000); // Send status every 2 seconds
 
     return () => {
       clearInterval(intervalId);
