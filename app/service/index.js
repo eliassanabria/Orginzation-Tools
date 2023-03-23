@@ -175,7 +175,7 @@ secureApiRouter.get('/groups/list', async (req, res)=>{
   const groupList = [];
   for(let i = 0; i < EnrollementList.length; ++i){
     const tempOrg = await DB.getOrgDoc(EnrollementList[i].group_enrollment_ID_Associated.toString());
-    console.log(tempOrg);
+    //console.log(tempOrg);
     const tempOrgRoles = EnrollementList[i].roles;
     const orgRolesTempList =[];
     for(let x = 0; x < tempOrgRoles.length; ++x){
@@ -186,7 +186,7 @@ secureApiRouter.get('/groups/list', async (req, res)=>{
       orgRolesTempList.push(tempRoleName);
     }
 
-    console.log(tempOrgRoles);
+    //console.log(tempOrgRoles);
     //make object values for html page to be injected to the table:
     const dateString = EnrollementList[i].enrollment_date.toString();
     const tIndex = dateString.indexOf('T');
@@ -339,7 +339,7 @@ secureApiRouter.get('/:groupID/membership/validate', async(req,res) =>{
   //console.log(requiredSurveys);
   for(let x = 0; x < requiredSurveys.length; ++x){
     const is_not_taken = await DB.checkDocumentExists(User._id.toString(), requiredSurveys[x]);
-    console.log(is_not_taken);
+    //console.log(is_not_taken);
      if(is_not_taken){
       survey_pending.push(requiredSurveys[x]);
      }
@@ -393,7 +393,7 @@ secureApiRouter.post('/:groupID/surveys/:surveyDocumentID/submit',async(req,res)
     const current_question_id = survey_questions[index].question_id.toString();
 
     if(responses[current_question_id]){
-      console.log("This question was answered.")
+      //console.log("This question was answered.")
       survey_questions[index].value = responses[current_question_id];
     }
     else if(survey_questions[index].is_required){
@@ -414,7 +414,7 @@ secureApiRouter.post('/:groupID/surveys/:surveyDocumentID/submit',async(req,res)
     survey_questions: survey_questions,
     document_title: surveyDocumentTemplate.document_title
   }
-  console.log(newSubmission);
+  //console.log(newSubmission);
   if(await DB.addUserSubmission(newSubmission)){
     res.status(200).send({
       msg: 'Your response has been recorded.',

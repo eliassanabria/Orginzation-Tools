@@ -265,6 +265,24 @@ async function getSurveyHTML(groupUUID, survey_id){
   return survey_object;
 }
 
+//For websockets:
+async function getAllGroupMembers(memberId) {
+  const result = await organizationsCollection.find(
+     {
+      "group_members": new ObjectId(memberId)
+     },
+     {
+        "group_members": 1
+     }
+  );
+  const allMembers = [];
+  result.forEach(doc => {
+     allMembers.push(...doc.group_members);
+  });
+  return allMembers;
+}
+
+
 
 const s3 = new AWS.S3();
 function uploadImageToS3(imageData, bucketName, objectName) {
@@ -289,6 +307,7 @@ function uploadImageToS3(imageData, bucketName, objectName) {
 }
 
 module.exports = {
+  getAllGroupMembers,
   getUserByEmail,
   getUserBy_id,
   getUserByAlias,

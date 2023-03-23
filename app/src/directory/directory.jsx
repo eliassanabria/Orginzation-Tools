@@ -1,14 +1,43 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext} from 'react';
 import { useParams } from 'react-router-dom'
 import { AuthState } from '../authentication/login/AuthState'
+import SocketContext from '../SocketContext';
+import {Socket, UserStatusChangeEvent} from '../socketCommunicator';
 
 import '../loaderContainer.css';
 import '../authentication/AuthPopup.css';
 import './directory.css';
 
 export function Directory(props) {
+  //const socket = useContext(SocketContext);
+  const {Authenticated, socket} = props;
 
-  const Authenticated = props.Authenticated;
+  React.useEffect(()=>{
+    socket.addHandler(handleUserStatusChange);
+    return ()=>{
+      socket.removeHandler(handleUserStatusChange);
+    }
+  });
+
+  function handleUserStatusChange(event) {
+    // Select all div elements with class "directory-item"
+    const directoryItems = document.querySelectorAll(".directory-item");
+  
+    // Loop through each div element with class "directory-item"
+    directoryItems.forEach((directoryItem) => {
+      // Select the div element with the dynamic id within the current directory-item
+      const currentUserLoggedIn = document.getElementById(event.userID);
+  
+      // Check if the element exists before changing its class
+      if (currentUserLoggedIn) {
+        // Change the class of the element
+        currentUserLoggedIn.className = event.status;
+      }
+    });
+  }
+  
+  
+  //const Authenticated = props.Authenticated;
     //Extract Group ID
     const { id } = useParams();
     const[OrganizationName, setOrgName] = useState(localStorage.getItem('Recent-Org-Directory-Name') || 'Organization Name');
@@ -79,7 +108,7 @@ export function Directory(props) {
               // Create a grid item element
               const gridItem = document.createElement("div");
               gridItem.className = "directory-item";
-              gridItem.id = item.id;
+              //gridItem.id = item.id;
               gridItem.onclick = function() {
                 window.location.href = '/users/' + item.id + '/profile'
               };

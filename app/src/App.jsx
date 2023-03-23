@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import SocketContext from './SocketContext';
 import { NavLink, Route, Routes } from 'react-router-dom';
 import { BrowserRouter as Router } from 'react-router-dom';
 import LoginPopupForm from './authentication/PopupAuthenticationPrompt'
@@ -11,13 +11,16 @@ import { Profile } from './profile/profile';
 import { NotFound } from './errors/404/404';
 import { AuthState } from './authentication/login/AuthState';
 import {SurveyCollection} from './surveys/SurveyCollection';
+import {Socket, UserStatusChangeEvent} from './socketCommunicator';
+import InactivityDetector from './addons_React/InactivityDetector';
 
 import './loaderContainer.css'
 import './App.css';
 
 function App() {
   const [AuthRequested,requestAuthPage] = useState(false);
-  const [userStatus, setUserStatus] = useState('Appear Offline');
+  const [userStatus, setUserStatus] = useState(localStorage.getItem('last_displayed_status')|| 'Online');
+  const [socket, setSocket] = useState(null);
   const [EmailAddress, setEmail] = useState(localStorage.getItem('email') || '');
   const [userAlias, setUserAlias] = React.useState(localStorage.getItem('Alias') || '');
   const [userID, setID] = useState(localStorage.getItem('userID'));
@@ -33,18 +36,31 @@ function App() {
     ).then(()=> localStorage.clear()
     );
   }
+
+  //hardcoded edit current user status icon:
+  const handleInactivity = () => {
+    console.log('Window has been inactive for more than 2 minutes.');
+    setUserStatus('Away');
+  };
+  const handleActivityResumed = () => {
+    console.log('Window activity resumed after being inactive for more than 5 minutes.');
+    setUserStatus(localStorage.getItem('last_displayed_status'));
+  };
   const handleStatusChange = (event) => {
-    setUserStatus(event.target.value);
+    const newStatus = event.target.value;
+    setUserStatus(newStatus);
+    localStorage.setItem('last_displayed_status',newStatus);
+    socket.sendStatus(userID, newStatus);
   };
   //TODO: Authentication verification:
 // Asynchronously determine if the user is authenticated by calling the service
 const [authState, setAuthState] = React.useState(AuthState.Unknown);
 React.useEffect(() => {
   if (EmailAddress) {
-    fetch(`/api/user/${EmailAddress}`,{
-      headers:{
+    fetch(`/api/user/${EmailAddress}`, {
+      headers: {
         'Authorization': `Bearer ${localStorage.getItem('token')}`
-    }
+      }
     })
       .then((response) => {
         if (response.status === 200) {
@@ -58,15 +74,40 @@ React.useEffect(() => {
         setProfileURL(response?.profile_image_url);
         setAuthState(state);
         setID(response?.id);
-        localStorage.setItem('id',response.id);
+        localStorage.setItem('id', response.id);
         //Socket Connections will go here for only authenticated users.
-
+        
+        if (!socket) {
+          Socket.connect();
+          setSocket(Socket);
+      
+          Socket.socket.on('open', () => {
+            // Send the user's status after the connection is established
+            //Socket.sendStatus(userID, userStatus);
+          });
+        }
       });
   } else {
     setAuthState(AuthState.Unauthenticated);
   }
 }, [EmailAddress]);
 
+React.useEffect(() => {
+  if (socket && userID && userStatus) {
+    const sendStatus = () => {
+      if (socket.socket.readyState === WebSocket.OPEN) {
+        socket.sendStatus(userID, userStatus);
+      }
+    };
+
+    sendStatus(); // Send status immediately
+    const intervalId = setInterval(sendStatus, 10000); // Send status every 2 seconds
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }
+}, [socket, userID, userStatus]);
   
   async function loadProfileImage(){
     var userProfileImage = localStorage.getItem('profile_image_url');
@@ -75,20 +116,16 @@ React.useEffect(() => {
   }
 
   const Login = ()=>{
-   // const AuthenticationLoginHolder = document.getElementById('AuthenticationLoginHolder');
     //AuthenticationLoginHolder.innerHTML = <LoginPopupForm targetURL="/home"/> ;
     requestAuthPage(true);
   }
   const closePopup = () => {
     requestAuthPage(false);
   }
-  // const logout = ()=>{
-  //   localStorage.setItem("IsSignedIn", false);
-  //   window.location.reload();
-  // }
 
   return (
     <div className="App">
+      <InactivityDetector onInactivity={handleInactivity} onActivityResumed={handleActivityResumed} />
       <header className="App-header">
           <nav>
             <div className="user-account-menu">
@@ -160,7 +197,7 @@ React.useEffect(() => {
         <Route path='/settings' element={<Settings Authenticated={authState}/>} />
         <Route
           path="/:id/directory"
-          element={<Directory Authenticated={authState}/>}
+          element={<Directory Authenticated={authState} socket={Socket}/>}
         />
         <Route path='/home' element={<Home Authenticated={authState}/>}/>
         <Route path='/register' element={<Register/>}/>
