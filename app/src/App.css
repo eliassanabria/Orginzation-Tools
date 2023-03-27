@@ -3,7 +3,6 @@
   position: sticky;
   top: 0px;
   width: 100%;
-  background-color: #ed0606;
   color: #fff;
   line-height: 26px;
 }
@@ -125,25 +124,34 @@ nav a {
   }
 }
 
-.tools-footer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  flex: 0 20px;
+Footer {
+  display: flex;
   color: white;
   background-color: #0a2a52;
+  flex-shrink: 0; /* prevents footer from shrinking */
+  position: fixed;
+  width: 100%;
+  bottom: 0;
+  flex: 0 1 20px;
+  justify-content: center;
 }
 
 
 body {
   display: flex;
   flex-direction: column;
-  margin: 0;
-  height: 100vh;
+  min-height: 100vh; /* changed 'height' to 'min-height' */
 }
-.footCenter {
+
+.main{
+  flex: 1;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: row;
+  overflow-y: auto;
+}
+.footCenter{
+align-items: center;
+display: flex;
+justify-content: center;
+flex-direction: row;
 }
