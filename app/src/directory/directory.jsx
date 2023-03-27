@@ -2,7 +2,7 @@ import React, { useEffect, useState, useContext, useMemo } from 'react';
 import { useParams } from 'react-router-dom'
 import { AuthState } from '../authentication/login/AuthState'
 import SocketContext from '../SocketContext';
-import { Socket, UserStatusChangeEvent } from '../socketCommunicator';
+import { Socket, UserStatusChangeEvent } from '../addons_React/socketCommunicator';
 
 import '../loaderContainer.css';
 import '../authentication/AuthPopup.css';

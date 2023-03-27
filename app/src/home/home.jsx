@@ -99,16 +99,16 @@ async function joinGroup(endpoint){
 
 }
 
-const JoinGroup = ()=>{
+const JoinGroup = async()=>{
   setPreviewStatus(false);
-  const response = joinGroup('/api/groups/join/' + JoinCode);
+  const response = await joinGroup('/api/groups/join/' + JoinCode);
   if(response.status !== 200){
     const body =  response.json();
     alert(`⚠ Error: ${body.msg}`);
   }
   else{
-    const body =  response.json();
-    window.location.href('/' + body.groupID);
+    const body =  await response.json();
+    window.location.href = `/${body.groupID}`;
   }
   
 }

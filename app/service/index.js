@@ -1,6 +1,6 @@
 
 //const cookieParser = require('cookie-parser');
-const bcrypt = require('bcrypt');
+const  bcrypt = require('bcrypt');
 const express = require('express');
 const app = express();
 const DB = require('./database.js');
@@ -42,7 +42,7 @@ apiRouter.post('/auth/register', async (req, res) => {
   }
   else {
     //Create expected s3 image destination
-    const profile_image_url = "https://media.licdn.com/dms/image/C4D03AQEsy3vazJSOpQ/profile-displayphoto-shrink_800_800/0/1597247840181?e=2147483647&v=beta&t=AfLvDe1FzLUdyDvPygpD_tV4VYFflHz7U9ae792EDs0";
+    const profile_image_url = "https://cdn-icons-png.flaticon.com/512/456/456212.png";
 
     const user = await DB.createUser(profile_image_url, req.body.first_name,
       req.body.last_name,req.body.preferred_name, req.body.share_pref_name, req.body.phone, req.body.share_phone,
@@ -203,7 +203,7 @@ secureApiRouter.get('/groups/list', async (req, res)=>{
       id:tempOrg._id.toString(),
       OrganizationName: tempOrg.group_name,
       Description: tempOrg.group_description,
-      MemberSince: datePart,
+      MemberSince: dateString,
       MyOrgRoles: roles
     }
     groupList.push(groupLine);
@@ -316,7 +316,7 @@ secureApiRouter.post('/groups/join/:joinCode',async(req,res) =>{
   //Join Group
   const enrollSuccess = joinGroup(OrgDocs._id.toString(),User._id.toString());
   if(enrollSuccess){
-    res.status(200).send({groupID: OrgDocs._id});
+    res.status(200).send({groupID: OrgDocs._id.toString()});
   }
   else{
     res.status(500);

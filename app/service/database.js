@@ -1,5 +1,4 @@
 const { MongoClient, ObjectId } = require('mongodb')
-const bcrypt = require('bcrypt');
 const uuid = require('uuid');
 const AWS = require('aws-sdk');
 
