@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SocketContext from './SocketContext';
 import { NavLink, Route, Routes } from 'react-router-dom';
 import { BrowserRouter as Router } from 'react-router-dom';
@@ -12,12 +12,17 @@ import { NotFound } from './errors/404/404';
 import { AuthState } from './authentication/login/AuthState';
 import { SurveyCollection } from './surveys/SurveyCollection';
 import { Socket } from './addons_React/socketCommunicator';
+//import './addons_React/pushNotifications';
 import InactivityDetector from './addons_React/InactivityDetector';
 import ConnectionStatus from './addons_React/ConnectionStatus';
 import './loaderContainer.css';
 import './App.css';
+import {initializePushNotifications} from './addons_React/PushNotificationServiceWorker'
 
 function App() {
+  
+  
+  
   const [AuthRequested, requestAuthPage] = useState(false);
   const [userStatus, setUserStatus] = useState(localStorage.getItem('last_displayed_status') || 'Online');
   const [socket, setSocket] = useState(null);
@@ -76,7 +81,6 @@ function App() {
           setID(response?.id);
           localStorage.setItem('id', response.id);
           //Socket Connections will go here for only authenticated users.
-
           if (!socket) {
             Socket.connect();
             setSocket(Socket);
@@ -86,6 +90,20 @@ function App() {
       setAuthState(AuthState.Unauthenticated);
     }
   }, [EmailAddress]);
+
+  useEffect(()=>{
+    if ('Notification' in window) {
+      if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        Notification.requestPermission().then(permission => {
+          console.log(`Notification permission: ${permission}`);
+
+        });
+      }
+      if(Notification.permission ==='granted' && authState === AuthState.Authenticated){
+        initializePushNotifications();
+      }
+    }
+  },[authState]);
 
   React.useEffect(() => {
     if (authState === AuthState.Authenticated) {
@@ -112,6 +130,7 @@ function App() {
     imageHolder.src = "data:image/png;base64," + userProfileImage;
   }
 
+
   const Login = () => {
     //AuthenticationLoginHolder.innerHTML = <LoginPopupForm targetURL="/home"/> ;
     requestAuthPage(true);
@@ -128,7 +147,7 @@ function App() {
           <div className="user-account-menu">
             <img src={profile_image_url} alt="Profile Picture" className="profile-picture" id='profileImage' />
             <div className="user-info">
-              {authState === AuthState.Authenticated && (<NavLink to={`/users/${userID}/profile`}>Welcome, <lable id='FirstNameDesktop'>{FirstNameDesktop}</lable></NavLink>)}
+              {authState === AuthState.Authenticated && (<NavLink to={`/users/${userID}/profile`}>Welcome, <label id='FirstNameDesktop'>{FirstNameDesktop}</label></NavLink>)}
               {authState === AuthState.Authenticated && (
                 <NavLink className='nav-link' to="settings">Settings</NavLink>)}
               {authState === AuthState.Authenticated && (
@@ -181,9 +200,9 @@ function App() {
           {loadProfileImage}
         </nav>
       </header>
-<main>
-      <div id='AuthenticationLoginHolder'>{AuthRequested && <LoginPopupForm targetURL="/home" closePopup={closePopup} />}</div>
-      
+      <main>
+        <div id='AuthenticationLoginHolder'>{AuthRequested && <LoginPopupForm targetURL="/home" closePopup={closePopup} />}</div>
+
         <Routes>
           <Route
             path='/'
@@ -198,7 +217,7 @@ function App() {
             element={<Directory Authenticated={authState} socket={Socket} />}
           />
           <Route path='/home' element={<Home Authenticated={authState} />} />
-          <Route path='/register' element={<Register />} />
+          <Route path='/register' element={<Register Authenticated={authState}/>} />
           <Route path='/users/:uuid/profile' element={<Profile Authenticated={authState} />} />
           <Route path='/:groupID/surveys/:surveyID' element={<SurveyCollection Authenticated={authState} />} />
           <Route path='*' element={<NotFound />} />
@@ -222,10 +241,14 @@ function Footer() {
       <div className="footCenter">
         <h6>This webiste is under construction</h6>
       </div>
+      <div id='FCMTOK'>
+
+      </div>
       <div><ConnectionStatus /></div>
     </footer>
-    );
+  );
 }
+
 
 
 

@@ -1,12 +1,15 @@
 import React from "react";
-import {useState, useRef} from 'react';
+import { useState, useRef, useEffect } from 'react';
 import LoginPopupForm from '../PopupAuthenticationPrompt'
 import './register.css';
 //import { Area } from 'react-easy-crop/types';
-
+import { uploadUserImage } from "../../addons_React/ProfileImageUploader";
+import { AuthState } from '../login/AuthState';
 export function Register(props) {
+  const fileInputRef = useRef(null);
+  const [CroppedFile, setCropFile] = useState(null);
   const Authenticated = props.Authenticated;
-  const [AuthRequested,requestAuthPage] = useState(false); // Don't need
+  const [AuthRequested, requestAuthPage] = useState(false); // Don't need
   const [email, setEmail] = useState('');
   const [shareEmailOrg, setEmailSharing] = useState(true);
   const [alias, setAlias] = useState('');
@@ -17,7 +20,8 @@ export function Register(props) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [sharePhone, setPhoneDisp] = useState(true);
   const [dob, setDOB] = useState();
-  const [gender, setGender] = useState('maleGender');  const [password, setPassword] = useState('')
+  const [gender, setGender] = useState('maleGender'); const [password, setPassword] = useState('')
+
   const [image, setImage] = useState("https://cdn-icons-png.flaticon.com/512/456/456212.png");
   const formatPhoneNumber = (input) => {
     // Strip all non-numeric characters from the input
@@ -38,9 +42,39 @@ export function Register(props) {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => {
-      setImage(reader.result);
+      //setImage(reader.result);
+      reader.onloadend = () => {
+        const img = new Image();
+        img.src = reader.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          const size = Math.min(img.width, img.height);
+          canvas.width = size;
+          canvas.height = size;
+          context.drawImage(
+            img,
+            (img.width - size) / 2,
+            (img.height - size) / 2,
+            size,
+            size,
+            0,
+            0,
+            size,
+            size
+          );
+          canvas.toBlob((blob) => {
+            // convert the blob to a file
+            const croppedFile = new File([blob], file.name, { type: file.type });
+            // call your upload image function with the cropped file
+            setCropFile(croppedFile);
+          }, file.type);
+          const dataUrl = canvas.toDataURL(file.type);
+          setImage(dataUrl);
+        };
+      };
     };
-  };
+  }
   const handlePhoneNumberChange = (event) => {
     const input = event.target.value;
     const formattedNumber = formatPhoneNumber(input);
@@ -74,14 +108,14 @@ export function Register(props) {
     const input = event.target.value;
     setPassword(input);
   };
-  async function registerNewUser(event){
+  async function registerNewUser(event) {
     event.preventDefault();
     register('/api/auth/register');
   }
-  async function register(endpoint){
+  async function register(endpoint) {
     const response = await fetch(endpoint, {
       method: 'post',
-      body:JSON.stringify({
+      body: JSON.stringify({
         email: email,
         password: password,
         first_name: first_name,
@@ -102,20 +136,32 @@ export function Register(props) {
       },
     });
     //Check successful creation then attempt to upload image to S3:
-    if(response?.status === 200){
+    if (response?.status === 200) {
+      if (response?.headers.has('Authorization')) {
+        // Extract token from header value
+        const token = response.headers.get('Authorization').split(' ')[1];
+        // Store token in local storage or cookie
+        localStorage.setItem('token', token);
+      } else {
+        console.log('No Authorization Bearer token found in response header');
+        // Handle login error
+      }
       const body = await response.json();
       localStorage.setItem('email', email);
       //Save data to local storage:
-      localStorage.setItem('profile_image_url',body.profile_image_url);
+      localStorage.setItem('profile_image_url', body.profile_image_url);
       localStorage.setItem('first_name', first_name);
-      localStorage.setItem('last_name',last_name);
-      localStorage.setItem('preferred_name',preferred_name);
+      localStorage.setItem('last_name', last_name);
+      localStorage.setItem('preferred_name', preferred_name);
       localStorage.setItem('alias', alias);
       localStorage.setItem('creation_date', body.creation_date);
       localStorage.setItem('userID', body.id);
-
+      localStorage.setItem('dob', dob);
+      //localStorage.setItem('')
+      const file = fileInputRef.current.files[0];
+      await uploadUserImage(CroppedFile);
     }
-    else if(response?.status ===409){
+    else if (response?.status === 409) {
       const body = await response.json();
       alert(`⚠ Error: ${body.msg}`);
     }
@@ -123,183 +169,162 @@ export function Register(props) {
     //Upload image to S3 Bucket
   }
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    // StoreRegistrationLocal(); // Call your registration function here
-    //Store Locally Temporary
-    localStorage.setItem("Alias",document.getElementById("alias").value);
-    localStorage.setItem("FirstName",document.getElementById("firstNameRegister").value);
-		localStorage.setItem("LastName",document.getElementById("lastNameRegister").value);
-		localStorage.setItem("PrefName",document.getElementById("prefName").value);
-		localStorage.setItem("PhoneNumber",document.getElementById("phone").value);
-		localStorage.setItem("EmailAddress",document.getElementById("emailRegistered").value);
-		localStorage.setItem("Password",document.getElementById("passwordRegister").value);
-		localStorage.setItem("DOB",document.getElementById("DOB_Reg").value);
-		localStorage.setItem("IsSignedIn", true);
-    const canvas = document.createElement("canvas");
-    const img = new Image();
-    img.onload = () => {
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0, img.width, img.height);
-    const dataURL = canvas.toDataURL("image/png");
-    console.log("DataURL is:" + dataURL);
-    //localStorage.setItem("profileImage", dataURL);
-    window.location.href = "/home";
-  }
-  img.src = image;
-  };
-const backToLogin = ()=>{
-  window.location.href = "/home";
 
-}
+  const backToLogin = () => {
+    window.location.href = "/home";
+
+  }
+
+  useEffect(() => {
+    if (Authenticated === AuthState.Authenticated) {
+      window.location.href = '/home';
+    }
+  }, [Authenticated]);
 
 
 
   return (
     <div id="AuthenticationFormHolder">
-        <div id='AuthenticationLoginHolder'>{AuthRequested &&<LoginPopupForm targetURL="/home"/>}</div>
+      <div id='AuthenticationLoginHolder'>{AuthRequested && <LoginPopupForm targetURL="/home" />}</div>
+      <form id="RegisterForm" onSubmit={registerNewUser}>
+        <h1>Create your account:</h1>
 
-    <form id="RegisterForm" onSubmit={registerNewUser}>
-    <h1>Create your account:</h1>
+        {image && <img src={image} alt="Preview" className='ProfileImageRound' />}
+        <br />
+        <br />
+        <input type="file" onChange={handleImageChange} required ref={fileInputRef} accept="image/png, image/jpeg" /> Image Upload Not working yet... stay tuned!
+        <br />
+        <br />
+        <label htmlFor="email">Email: </label>
+        <input type="email"
+          id="emailRegistered"
+          name="varEmail" required
+          value={email}
+          onChange={handleEmailUpdateChange} />
+        <input
+          type="checkbox"
+          id="shareEmailOrg"
+          name="shareEmailWithorg"
+          value={shareEmailOrg}
 
-      {image && <img src={image} alt="Preview" className='ProfileImageRound' />}
-      <br/>
-      <br/>
-      <input type="file" onChange={handleImageChange} disabled/> Image Upload Not working yet... stay tuned!
-    <br/>
-    <br/>
-      <label htmlFor="email">Email: </label>
-      <input type="email"
-      id="emailRegistered"
-      name="varEmail" required
-      value={email} 
-      onChange={handleEmailUpdateChange}/>
-      <input
-        type="checkbox"
-        id="shareEmailOrg"
-        name="shareEmailWithorg"
-        value={shareEmailOrg}
-        
-      />
-      <label htmlFor="shareEmailOrg">Share with Organizations</label>
-      <br />
-      <br />
-      <label htmlFor="Alias">Alias: </label>
-      <input type='text' id='alias' name='userAlias' value={alias} onChange={handleAliasUpdateChange} />
-      <br/>
-      <br/>
-      <label htmlFor="firstNameRegister">First Name: </label>
-      <input
-        type="text"
-        id="firstNameRegister"
-        name="varText"
-        placeholder="First Name"
-        value={first_name}
-        spellCheck=""
-        required
-        onChange={handleFirstNameUpdateChange}
-      />
-      <br />
-      <br />
-      <label htmlFor="lastNameRegister">Last Name: </label>
-      <input
-        type="text"
-        id="lastNameRegister"
-        name="varText"
-        placeholder="Last Name"
-        spellCheck=""
-        value={last_name}
-        required
-        onChange={handleLastNameUpdateChange}
-      />
-      <br />
-      <br />
-      <label htmlFor="prefName">Preferred Name: </label>
-      <input
-        type="text"
-        id="prefName"
-        name="varText"
-        placeholder="Preffered name"
-        spellCheck=""
-        value={preferred_name}
-        required
-        onChange={handlePrefNameUpdateChange}
-      />
-      <input
-        type="checkbox"
-        id="checkbox1"
-        name="sharePrefNameWithWard"
-        value={sharePrefNameWithOrg}
-        defaultChecked
-      />
-      <label htmlFor="checkbox1">Display In Organization Directory</label>
-      <br />
-      <br />
-      <label htmlFor="phone">Phone Number:</label>
-      <input
-        type='tel'
-        id="phone"
-        name="phone"
-        placeholder="801-422-0000"
-        pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
-        required
-        value={phoneNumber}
-        onChange={handlePhoneNumberChange}
-      />
-      <input
-        type="checkbox"
-        id="sharePhoneWard"
-        name="sharePhonehWard"
-        value={sharePhone}
-        defaultChecked
-      />
-      <label htmlFor="sharePhoneWard">Share with Organizations</label>
-      <br />
-      <br />
-      <label htmlFor="DOB_Reg">Date of Birth: </label>
-      <input
-        type="date"
-        name="varDate"
-        id="DOB_Reg"
-        required
-        value={dob}
-        onChange={handleDOBUpdateChange}
-        placeholder="01/01/1999"
-      />
-      <br />
-      <br />
-      <label>Gender:  </label>
-<label htmlFor="maleGender">Male</label>
-<input 
-  type="radio" 
-  id="maleGender" 
-  name="gender" 
-  value="maleGender" 
-  checked={gender === 'maleGender'} 
-  onChange={(e) => setGender(e.target.value)} 
-/>
+        />
+        <label htmlFor="shareEmailOrg">Share with Organizations</label>
+        <br />
+        <br />
+        <label htmlFor="Alias">Alias: </label>
+        <input type='text' id='alias' name='userAlias' value={alias} onChange={handleAliasUpdateChange} required />
+        <br />
+        <br />
+        <label htmlFor="firstNameRegister">First Name: </label>
+        <input
+          type="text"
+          id="firstNameRegister"
+          name="varText"
+          placeholder="First Name"
+          value={first_name}
+          spellCheck=""
+          required
+          onChange={handleFirstNameUpdateChange}
+        />
+        <br />
+        <br />
+        <label htmlFor="lastNameRegister">Last Name: </label>
+        <input
+          type="text"
+          id="lastNameRegister"
+          name="varText"
+          placeholder="Last Name"
+          spellCheck=""
+          value={last_name}
+          required
+          onChange={handleLastNameUpdateChange}
+        />
+        <br />
+        <br />
+        <label htmlFor="prefName">Preferred Name: </label>
+        <input
+          type="text"
+          id="prefName"
+          name="varText"
+          placeholder="Preffered name"
+          spellCheck=""
+          value={preferred_name}
+          required
+          onChange={handlePrefNameUpdateChange}
+        />
+        <input
+          type="checkbox"
+          id="checkbox1"
+          name="sharePrefNameWithWard"
+          value={sharePrefNameWithOrg}
+          defaultChecked
+        />
+        <label htmlFor="checkbox1">Display In Organization Directory</label>
+        <br />
+        <br />
+        <label htmlFor="phone">Phone Number:</label>
+        <input
+          type='tel'
+          id="phone"
+          name="phone"
+          placeholder="801-422-0000"
+          pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
+          required
+          value={phoneNumber}
+          onChange={handlePhoneNumberChange}
+        />
+        <input
+          type="checkbox"
+          id="sharePhoneWard"
+          name="sharePhonehWard"
+          value={sharePhone}
+          defaultChecked
+        />
+        <label htmlFor="sharePhoneWard">Share with Organizations</label>
+        <br />
+        <br />
+        <label htmlFor="DOB_Reg">Date of Birth: </label>
+        <input
+          type="date"
+          name="varDate"
+          id="DOB_Reg"
+          required
+          value={dob}
+          onChange={handleDOBUpdateChange}
+          placeholder="01/01/1999"
+        />
+        <br />
+        <br />
+        <label>Gender:  </label>
+        <label htmlFor="maleGender">Male</label>
+        <input
+          type="radio"
+          id="maleGender"
+          name="gender"
+          value="maleGender"
+          checked={gender === 'maleGender'}
+          onChange={(e) => setGender(e.target.value)}
+        />
 
-<label htmlFor="femaleGender">Female</label>
-<input 
-  type="radio" 
-  id="femaleGender" 
-  name="gender" 
-  value="femaleGender" 
-  checked={gender === 'femaleGender'} 
-  onChange={(e) => setGender(e.target.value)} 
-/>
-      <br />
-      <br />
-      <label htmlFor="password">Password: </label>
-      <input type="password" id="passwordRegister" name="varPassword" required value={password}
-      onChange={handlePasswordUpdateChange}/>
-      <br />
-      <br />
-      <button type="button" onClick={backToLogin}>Return to Login</button>
-      <button type="submit">Create Account</button>
-    </form>
+        <label htmlFor="femaleGender">Female</label>
+        <input
+          type="radio"
+          id="femaleGender"
+          name="gender"
+          value="femaleGender"
+          checked={gender === 'femaleGender'}
+          onChange={(e) => setGender(e.target.value)}
+        />
+        <br />
+        <br />
+        <label htmlFor="password">Password: </label>
+        <input type="password" id="passwordRegister" name="varPassword" required value={password}
+          onChange={handlePasswordUpdateChange} />
+        <br />
+        <br />
+        <button type="button" onClick={backToLogin}>Return to Login</button>
+        <button type="submit">Create Account</button>
+      </form>
     </div>
   );
-  }
+}

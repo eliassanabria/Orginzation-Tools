@@ -31,8 +31,7 @@ const ConnectionStatus = () => {
 
   return (
     <div>
-      <h3>WebSocket Status:</h3>
-      <p>{Socket.WebSocketStatus}</p>
+      <p>Server: {Socket.WebSocketStatus}</p>
     </div>
   );
 };

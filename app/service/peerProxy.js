@@ -114,7 +114,7 @@ class PeerProxy {
                 }
               }
             }
-            if (peerGroupMembers) {
+            if (peerGroupMembers && connections.length !== 0) {
               connections[i].peerGroup = peerGroupMembers;
             }
             else { break; }

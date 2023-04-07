@@ -135,34 +135,74 @@ secureApiRouter.use(async (req, res, next) => {
     res.status(401).send({ msg: 'Unauthorized!', user_Was: user, tokenWas: token});
   }
 });
-secureApiRouter.post('/services/uploads/profiles',upload.single('image'), (req, res) => {
+
+secureApiRouter.patch('/services/updateImageURL', async(req, res) => {
+  const url = await req.body.url;
   //then get that user from db with authToken,
   const authToken = extractAuth(req);
-  //const imageString = req?.imageString;
-  // const imageData = req.headers;
-  // res.status(200).send({imageData});
-  const file = req.file;
-  if (!file) {
-    return res.status(400).send('No image uploaded!');
-  }
-  else{
-    //process file
-    res.status(200).send('Image uploaded successfully!');
+  //validate AuthToken
+  const userToken = await DB.getUserByToken(authToken);
+  if(!userToken){
+    res.status(401).send({msg:'Not Authorized'});
     return;
   }
-  console.log(imageData);
-  const user = DB.getUserByToken(authToken);
-  const alias = user.alias;
-  const imagePath = alias + '_profileImage';
-  const pathImage = DB.uploadImageToS3(imageString, 'organization-tools-user-profile-images', imagePath);
-  if(pathImage){
-    res.send({
-      imagePath: pathImage,
-      msg: 'successfully uploaded to s3',
-    })
+  const user = await DB.getUserByAlias(userToken.alias);
+  if(!user){
+    res.status(404).send({msg:'User not found'});
+    return;
   }
-  //then extract username and create URL path, convert and uplaod to s3.
+  const userName = user._id.toString();
+  const submission = await DB.updateProfileImageURL(userName,url);
+  console.log(submission);
+  if(submission.acknowledged){
+    res.status(201).send({msg:'OK'})
+  }
 });
+
+
+secureApiRouter.post('/services/uploads/profiles', async(req, res) => {
+  const contentType = await req.body.Content_Type;
+  //then get that user from db with authToken,
+  const authToken = extractAuth(req);
+  //validate AuthToken
+  const userToken = await DB.getUserByToken(authToken);
+  if(!userToken){
+    res.status(401).send({msg:'Not Authorized'});
+    return;
+  }
+  const user = await DB.getUserByAlias(userToken.alias);
+  if(!user){
+    res.status(404).send({msg:'User not found'});
+    return;
+  }
+  const userName = user._id.toString()
+  const fileExtention = contentType.replace('image/', '');
+  const bucketName = 'organization-tools-user-profile-images';
+  const objectKey = `${userName}.${fileExtention}`;
+  const expiresIn = 600; // URL will expire in 10 munutes(600 seconds)
+
+  try {
+    const uploadUrl = await DB.createPresignedUrlForUpload(bucketName, objectKey, contentType, expiresIn);
+    res.status(200).json({ url: uploadUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: 'Failed to generate Presigned URL'});
+  }
+});
+
+//Push Notifications:
+secureApiRouter.post(`/notifications/push/token/store/:token`, async (req,res)=>{
+  const notificationToken = req.params.token;
+  const token = extractAuth(req);
+  //Validate Token:
+  const successTokenAdd = await DB.addClientPushToken(token,notificationToken);
+  if(successTokenAdd){
+    res.status(201).send({msg: `OK`});
+  }
+  else{
+    res.status(400).send({msg: `Failed to store client push notification`});
+  }
+})
 
 secureApiRouter.get('/groups/list', async (req, res)=>{
   const token = extractAuth(req);
@@ -422,12 +462,7 @@ secureApiRouter.post('/:groupID/surveys/:surveyDocumentID/submit',async(req,res)
   }
 });
 
-// SubmitScore
-secureApiRouter.post('/score', async (req, res) => {
-  await DB.addScore(req.body);
-  const scores = await DB.getHighScores();
-  res.send(scores);
-});
+
 
 //Get the info on group requesting to join and verify they are not a member of the group.
 secureApiRouter.get('/group/:JoinCode/info', async(req,res)=>{
@@ -488,6 +523,8 @@ function extractAuth(req){
   const authHeader = req.headers['authorization'];
   if (authHeader) {
     const token = authHeader.split(' ')[1];
+
+    //Check authToken is valid
     return token;
   } else {
     return null;

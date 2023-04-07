@@ -78,7 +78,7 @@
   .directory_user_small_profile_icon_boarder .directory_user_small_profile_icon {
     border-radius: 50%;
     width: 100px;
-  
+    height: 100px;
     text-align: center;
   }
 
