@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import  { useEffect, useState, useCallback } from 'react';
 
 const InactivityDetector = ({ onInactivity, onActivityResumed }) => {
   const [timer, setTimer] = useState(null);

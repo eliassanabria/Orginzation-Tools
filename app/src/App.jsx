@@ -17,12 +17,12 @@ import InactivityDetector from './addons_React/InactivityDetector';
 import ConnectionStatus from './addons_React/ConnectionStatus';
 import './loaderContainer.css';
 import './App.css';
-import {initializePushNotifications} from './addons_React/PushNotificationServiceWorker'
+import { initializePushNotifications } from './addons_React/PushNotificationServiceWorker'
 
 function App() {
-  
-  
-  
+
+
+
   const [AuthRequested, requestAuthPage] = useState(false);
   const [userStatus, setUserStatus] = useState(localStorage.getItem('last_displayed_status') || 'Online');
   const [socket, setSocket] = useState(null);
@@ -91,7 +91,7 @@ function App() {
     }
   }, [EmailAddress]);
 
-  useEffect(()=>{
+  useEffect(() => {
     if ('Notification' in window) {
       if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
         Notification.requestPermission().then(permission => {
@@ -99,11 +99,11 @@ function App() {
 
         });
       }
-      if(Notification.permission ==='granted' && authState === AuthState.Authenticated){
+      if (Notification.permission === 'granted' && authState === AuthState.Authenticated) {
         initializePushNotifications();
       }
     }
-  },[authState]);
+  }, [authState]);
 
   React.useEffect(() => {
     if (authState === AuthState.Authenticated) {
@@ -125,9 +125,15 @@ function App() {
   }, [Socket, userID, userStatus]);
 
   async function loadProfileImage() {
-    var userProfileImage = localStorage.getItem('profile_image_url');
+    if(authState === AuthState.Authenticated){
+      var userProfileImage = localStorage.getItem('profile_image_url');
     const imageHolder = document.querySelectorAll('.profileImage');
     imageHolder.src = "data:image/png;base64," + userProfileImage;
+    }
+    else{
+      const imageHolder = document.querySelectorAll('.profileImage');
+      imageHolder.src = "data:image/png;base64, https://cdn-icons-png.flaticon.com/512/456/456212.png";
+    }
   }
 
 
@@ -159,14 +165,14 @@ function App() {
                 </select>)}
             </div>
           </div>
-          {authState === AuthState.Authenticated && (
-            <NavLink className='nav-link' id='desktopNav' to="6410b886773710f67ea6835b/directory">Directory</NavLink>)}
+          {/* {authState === AuthState.Authenticated && (
+            <NavLink className='nav-link' id='desktopNav' to="6410b886773710f67ea6835b/directory">Directory</NavLink>)} */}
           {authState === AuthState.Authenticated && (
             <NavLink className='nav-link' id="desktopNav" to="home">My Groups</NavLink>)}
           {authState === AuthState.Authenticated && (
             <NavLink onClick={logout} id="desktopNav">Logout</NavLink>)}
           {authState !== AuthState.Authenticated && (<NavLink id="desktopNav" onClick={Login}>Login</NavLink>)}
-
+          {authState !== AuthState.Authenticated && (<NavLink id="desktopNav" to='register'>Register</NavLink>)}
           <div className="dropdown">
             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Hamburger_icon_white.svg/1024px-Hamburger_icon_white.svg.png" width="20px" alt="Menu_icon" />
             <NavLink to="#"><b>Menu</b></NavLink>
@@ -187,13 +193,14 @@ function App() {
                   )}
                 </div>
               </div>
-              {authState === AuthState.Authenticated && (
-                <NavLink className='nav-link' to="6410b886773710f67ea6835b/directory">Directory</NavLink>)}
+              {/* {authState === AuthState.Authenticated && (
+                <NavLink className='nav-link' to="6410b886773710f67ea6835b/directory">Directory</NavLink>)} */}
               {authState === AuthState.Authenticated && (
                 <NavLink className='nav-link' to="home">My Groups</NavLink>)}
               {authState === AuthState.Authenticated && (
                 <NavLink onClick={logout} >Logout</NavLink>)}
               {authState !== AuthState.Authenticated && (<NavLink onClick={Login}>Login</NavLink>)}
+              {authState !== AuthState.Authenticated && (<NavLink id="desktopNav" to='register'>Register</NavLink>)}
 
             </div>
           </div>
@@ -217,8 +224,8 @@ function App() {
             element={<Directory Authenticated={authState} socket={Socket} />}
           />
           <Route path='/home' element={<Home Authenticated={authState} />} />
-          <Route path='/register' element={<Register Authenticated={authState}/>} />
-          <Route path='/users/:uuid/profile' element={<Profile Authenticated={authState} />} />
+          <Route path='/register' element={<Register Authenticated={authState} />} />
+          {/* <Route path='/users/:uuid/profile' element={<Profile Authenticated={authState} />} /> */}
           <Route path='/:groupID/surveys/:surveyID' element={<SurveyCollection Authenticated={authState} />} />
           <Route path='*' element={<NotFound />} />
         </Routes>
@@ -232,19 +239,11 @@ function App() {
 function Footer() {
   return (
     <footer>
-      <div className="footCenter">
-        <h6>This application is not spported nor endorsed by the Church of Jesus Christ of Latter-day Saints</h6>
-      </div>
+<div className="footCenter"><br></br></div>
       <div className="footCenter">
         <button className="button" onClick={() => window.location.href = 'https://pysa169.eliassanabria.com'}>Provo YSA 169 Ward Login</button>
       </div>
-      <div className="footCenter">
-        <h6>This webiste is under construction</h6>
-      </div>
-      <div id='FCMTOK'>
-
-      </div>
-      <div><ConnectionStatus /></div>
+      <div className="footCenter"><ConnectionStatus /></div>
     </footer>
   );
 }

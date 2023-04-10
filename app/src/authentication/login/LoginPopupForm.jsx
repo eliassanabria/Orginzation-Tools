@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { CAlert } from '@coreui/react'
+import 'bootstrap';
 import '../AuthPopup.css';
 export function LoginPopupForm(props) {
   const [email, setEmail] = useState("");
@@ -34,7 +36,6 @@ export function LoginPopupForm(props) {
         console.log('No Authorization Bearer token found in response header');
         // Handle login error
       }
-      spinnerHolder.innerHTML = '';
       const body = await response.json();
       localStorage.setItem('email', email);
       //Save data to local storage:
@@ -46,7 +47,7 @@ export function LoginPopupForm(props) {
       localStorage.setItem('alias', body.alias);
       localStorage.setItem('creation_date', body.creation_date);
       localStorage.setItem('userID', body.id);
-
+      spinnerHolder.innerHTML = '';
       window.location.href = targetURL;
     }
     else if(response?.status ===401){
@@ -63,8 +64,8 @@ export function LoginPopupForm(props) {
   return (
     <div>
       <div id='spinnerHolder'>
-
       </div>
+      <CAlert color="danger" dismissible>⚠ Error:</CAlert>
       <form id="LoginForm" onSubmit={loginUser}>
         <label htmlFor="email">Email:</label>
         <input

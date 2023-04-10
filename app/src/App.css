@@ -125,7 +125,7 @@ nav a {
 }
 
 Footer {
-  display: flex;
+  display: flexbox;
   color: white;
   background-color: #0a2a52;
   flex-shrink: 0; /* prevents footer from shrinking */
