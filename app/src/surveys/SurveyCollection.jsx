@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { AuthState } from '../authentication/login/AuthState'
+import { Spinner } from "../addons_React/Spinners/Spinner";
 
 export function SurveyCollection(props) {
   const authState = props.Authenticated;
   const {groupID,surveyID} = useParams();
   const [surveyDocument, setSurveyDocument] = useState(null);
-
+  const[displayLoader, setLoader] = useState(false);
   //handleSubmit
   const handleSubmit = async (event)=>{
+    setLoader(true);
     event.preventDefault();
     const form = event.target; // get the form element
     //console.log(form);
@@ -30,9 +32,12 @@ export function SurveyCollection(props) {
         if (submissionResponse.status !== 200) {
             const responseBody = await submissionResponse.json();
             alert('⚠ Error' + submissionResponse.status + ':' + responseBody.msg);
+            setLoader(false);
         } else {
             // Handle successful response
+            
             alert('Survey was successfully submitted')
+            setLoader(false);
             window.history.back();
         }
             
@@ -44,8 +49,7 @@ export function SurveyCollection(props) {
       //form_holder.innerHTML = '<div><b>Please login to continue</b></div>'
     }
     else{
-      //form_holder.innerHTML = '';
-      //Fetch form:
+      setLoader(true);
       const apiURL = "/api/" + groupID + "/surveys/" + surveyID;
       fetch(apiURL, {
           headers:{
@@ -54,6 +58,7 @@ export function SurveyCollection(props) {
       .then(response=>{
           if(response.status!== 200){
               //return;
+              setLoader(false);
           }
           else{
               console.log(response);
@@ -62,8 +67,8 @@ export function SurveyCollection(props) {
       })
       .then(responseBody =>{
           console.log(responseBody);
-
           setSurveyDocument(responseBody.FormData);
+          setLoader(false);
       })
     }
   }, [authState])
@@ -75,6 +80,7 @@ export function SurveyCollection(props) {
 
     return (
       <form onSubmit={handleSubmit}>
+        {displayLoader && <Spinner/>}
         <h1>{surveyDocument.document_title}</h1>
         {surveyDocument.survey_questions.map((question) => (
           <div key={question.label}>

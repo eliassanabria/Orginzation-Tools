@@ -69,6 +69,7 @@ class SocketCommunicator {
       console.error('Failed to connect to server:', error);
       // You can perform any additional actions you want to take in case of connection failure here
       this.WebSocketStatus = 'Disconnected';
+      setTimeout(() => this.connect(), this.reconnectDelay);
     });
   }
 

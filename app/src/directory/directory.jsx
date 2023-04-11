@@ -3,14 +3,15 @@ import { useParams } from 'react-router-dom'
 import { AuthState } from '../authentication/login/AuthState'
 import SocketContext from '../SocketContext';
 //import { Socket, UserStatusChangeEvent } from '../addons_React/socketCommunicator';
-
-import '../loaderContainer.css';
+import { Spinner } from '../addons_React/Spinners/Spinner';
 import '../authentication/AuthPopup.css';
 import './directory.css';
+
 
 export function Directory(props) {
   //const socket = useContext(SocketContext);
   const { Authenticated, socket } = props;
+  const[displayLoader, setLoader] = useState(false);
 
   React.useEffect(() => {
     socket.addHandler(handleUserStatusChange);
@@ -50,10 +51,11 @@ export function Directory(props) {
     const LoadingHolder = document.getElementById('LoadingHolder');
     gridContainer.innerHTML = '';
     //Clear the directory grid if page is refreshed. This eliminates duplicate members from showing up.
-    LoadingHolder.innerHTML = '<div class="popup"> <div class="popup-inner"><div class="spinner-holder"><div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div></div></div></div></div>';
+    //LoadingHolder.innerHTML = '<div class="popup"> <div class="popup-inner"><div class="spinner-holder"><div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div></div></div></div></div>';
+    setLoader(true);
     if (Authenticated !== AuthState.Authenticated) {
       gridContainer.innerHTML = "Please log in to view this directory";
-      LoadingHolder.innerHTML = '';
+      setLoader(false);
       //gridContainer.appendChild();
       return;
     }
@@ -161,10 +163,10 @@ export function Directory(props) {
             gridContainer.appendChild(gridItem);
           }
         }
-        LoadingHolder.innerHTML = '';
+        setLoader(false);
       })
       .catch(error => {
-        LoadingHolder.innerHTML = '';
+        setLoader(false);
         console.error("There was a problem fetching the user data:", error);
       });
     console.log("Successful fetch of data");
@@ -195,7 +197,7 @@ export function Directory(props) {
           </div>
         </div>
       </div>
-      <div id='LoadingHolder'></div>
+      {displayLoader && <Spinner/>}
 
 
     </div>

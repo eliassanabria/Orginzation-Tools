@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { CAlert } from '@coreui/react'
 import 'bootstrap';
 import '../AuthPopup.css';
+import { Spinner } from '../../addons_React/Spinners/Spinner';
 export function LoginPopupForm(props) {
+  const[displayLoader, setLoader] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const targetURL = props.targetURL;
@@ -15,8 +17,7 @@ export function LoginPopupForm(props) {
 
   async function login(endpoint){
     //set spinning loader
-    const spinnerHolder = document.getElementById('spinnerHolder');
-    spinnerHolder.innerHTML = '<div class="popup"> <div class="popup-inner"><div class="spinner-holder"><div class="lds-spinner"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div></div></div></div></div>';
+    setLoader(true);
 
     const response = await fetch(endpoint,{
       method:'post',
@@ -47,25 +48,23 @@ export function LoginPopupForm(props) {
       localStorage.setItem('alias', body.alias);
       localStorage.setItem('creation_date', body.creation_date);
       localStorage.setItem('userID', body.id);
-      spinnerHolder.innerHTML = '';
+      setLoader(false);
       window.location.href = targetURL;
     }
     else if(response?.status ===401){
       const body = await response.json();
-      spinnerHolder.innerHTML = '';
+      setLoader(false);
       alert(`⚠ Error: ${body.msg}`);
 
     }
     else{
-      spinnerHolder.innerHTML = '';
+      setLoader(false);
     }
   }
   
   return (
     <div>
-      <div id='spinnerHolder'>
-      </div>
-      <CAlert color="danger" dismissible>⚠ Error:</CAlert>
+      {displayLoader && <Spinner/>}
       <form id="LoginForm" onSubmit={loginUser}>
         <label htmlFor="email">Email:</label>
         <input

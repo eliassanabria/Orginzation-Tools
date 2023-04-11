@@ -8,7 +8,7 @@ const { PeerProxy } = require('./peerProxy.js');
 const multer = require('multer');
 const { ObjectId } = require('mongodb/lib/bson.js');
 const bodyParser = require('body-parser');
-
+const admin = require('./firebaseConfig.js');
 //const axios = require('axios');
 const upload = multer();
 const authCookieName = 'token';
@@ -129,11 +129,11 @@ apiRouter.use(secureApiRouter);
 
 secureApiRouter.use(async (req, res, next) => {
   const token = await extractAuth(req);
-  const user = await DB.getUserByToken(token);
-  if (user) {
+  const decodeValue = admin.auth().verifyIdToken(token);
+    if(decodeValue){
     next();
   } else {
-    res.status(401).send({ msg: 'Unauthorized!', user_Was: user, tokenWas: token });
+    res.status(401).send({ msg: 'Unauthorized!' });
   }
 });
 //get user document for /settings page of user
@@ -559,7 +559,6 @@ function extractAuth(req) {
   if (authHeader) {
     const token = authHeader.split(' ')[1];
 
-    //Check authToken is valid
     return token;
   } else {
     return null;
