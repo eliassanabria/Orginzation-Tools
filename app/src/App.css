@@ -1,6 +1,6 @@
 
 .App-header{
-  position: sticky;
+  position: absolute;
   top: 0px;
   width: 100%;
   color: #fff;
@@ -8,9 +8,12 @@
 }
 nav {
   display: flex;
+  position: absolute;
+  width: 100%;
   align-items: center;
   background-color: #0a2a52;
   color: white;
+  top:0;
 }
 
 .user-account-menu {
@@ -117,7 +120,7 @@ nav a {
     display: none;
   }
   .dropdown {
-    z-index: 0;
+    z-index: 2;
     display: block;
     position: relative;
     margin-bottom: 10px;
@@ -125,7 +128,8 @@ nav a {
 }
 
 Footer {
-  display: flexbox;
+  /* display: flex; */
+  
   color: white;
   background-color: #0a2a52;
   flex-shrink: 0; /* prevents footer from shrinking */
@@ -143,11 +147,12 @@ body {
   min-height: 100vh; /* changed 'height' to 'min-height' */
 }
 
-.main{
+main{
   flex: 1;
   display: flex;
   flex-direction: row;
-  overflow-y: auto;
+  overflow-y:auto;
+  
 }
 .footCenter{
 align-items: center;

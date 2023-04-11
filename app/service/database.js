@@ -1,6 +1,8 @@
 const { MongoClient, ObjectId } = require('mongodb')
 const uuid = require('uuid');
-const AWS = require('aws-sdk');
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const  bcrypt = require('bcrypt');
 
 const userName = process.env.MONGOUSER;
 const password = process.env.MONGOPASSWORD;
@@ -8,14 +10,9 @@ const hostname = process.env.MONGOHOSTNAME;
 const AWS_Region = process.env.AWS_REGION;
 const AWS_AccessKeyID = process.env.AWS_KEY;
 const AWS_SecretKey = process.env.AWS_SECRET_KEY;
+const FCM_Key = process.env.FCM_KEY;
 
-// const fs = require('fs');
 
-AWS.config.update({
-  region: AWS_Region,
-  accessKeyId: AWS_AccessKeyID,
-  secretAccessKey: AWS_SecretKey
-});
 
 
 if (!userName) {
@@ -45,15 +42,15 @@ function getUserBy_id(id) {
 function getUserByToken(tokenPass) {
   return AuthTokenCollection.findOne({ token: tokenPass });
 }
-function getUserByPhoneNumber(phone_number){
-  return userCollection.findOne({phone:phone_number});
+function getUserByPhoneNumber(phone_number) {
+  return userCollection.findOne({ phone: phone_number });
 }
 
-async function createAuthTokenForUser(alias){
+async function createAuthTokenForUser(alias) {
   var date = new Date(); // Now
   date.setDate(date.getDate() + 30);
-  
-  const authToken  = {
+
+  const authToken = {
     token: uuid.v4(),
     alias: alias,
     expiriation: date,
@@ -62,10 +59,43 @@ async function createAuthTokenForUser(alias){
 
   return authToken;
 }
+//Tag FCM Client Token to user's authToken. This will keep track of FCM with the session of the user.
+//This will auto-remove FCM for expired and un-used sessions
+async function addClientPushToken(authTokenID, pushToken) {
+  await AuthTokenCollection.updateOne(
+    { token: authTokenID },
+    { $set: { pushToken: pushToken } }
+  );
+  return true;
+}
+//Send Push Notification
+async function pushNotificationToUsers(PushTitle, PushBody, PushOptions, RecipientList) {
+  
+  const message = {
+    'message': {
+      'token': RecipientList,
+      "notification": {
+        "title": `${PushTitle}`,
+        "body": `${PushBody}`
+      },
+      // "webpush": {
+      //   "headers": {
+      //     "Urgency": "high"
+      //   },
+      //   "notification": {
+      //     "body": "This is a message from FCM to web",
+      //     "requireInteraction": "true",
+      //     "badge": "/icon-192x192.png"
+      //   }
+      // }
+    }
 
+    
+  }
+}
 async function createUser(profile_image_url, first_name,
-                          last_name,preferred_name, share_pref_name, phone, share_phone,
-                          email, share_email, alias, dob, gender, password) {
+  last_name, preferred_name, share_pref_name, phone, share_phone,
+  email, share_email, alias, dob, gender, password) {
   // Hash the password before we insert it into the database
   const passwordHash = await bcrypt.hash(password, 10);
   const creation_date = new Date();
@@ -90,87 +120,84 @@ async function createUser(profile_image_url, first_name,
   return user;
 }
 
-async function addMemberToOrg(orgUUID,memberUUID){
+async function updateProfileImageURL(userID,url){
+  const query = { '_id': new ObjectId(userID) };
+  const update = { $set: { 'profile_image_url': url } };
+  const result = await userCollection.updateOne(query, update);
+
+    return result;
+}
+
+async function addMemberToOrg(orgUUID, memberUUID) {
   await organizationsCollection.updateOne(
     { "_id": new ObjectId(orgUUID) }, // filter to match the document
     { $push: { "group_members": new ObjectId(memberUUID) } } // update to push the new member ID to the array
- )
- return true;
+  )
+  return true;
 }
 
-function addScore(score) {
-  scoreCollection.insertOne(score);
+
+
+function DeleteAuthToken(tokenPassed) {
+  AuthTokenCollection.deleteOne({ token: tokenPassed });
 }
 
-function DeleteAuthToken(tokenPassed){
-  AuthTokenCollection.deleteOne({token: tokenPassed});
-}
-
-async function getGroupsEnrollmentList(userID){
-  const enrollmentListData = await organizations_Enrollment_Collection.find({enrollee_id: userID});
+async function getGroupsEnrollmentList(userID) {
+  const enrollmentListData = await organizations_Enrollment_Collection.find({ enrollee_id: userID });
   const enrollmentList = await enrollmentListData.toArray();
   return enrollmentList;
 }
 //Create new enrollement for user:
-async function enrollNewUser(groupUUID, memberUUID, standardRoleUUID){
+async function enrollNewUser(groupUUID, memberUUID, standardRoleUUID) {
   organizations_Enrollment_Collection.insertOne(
     {
-       "group_enrollment_ID_Associated": new ObjectId(groupUUID),
-       "enrollee_id": new ObjectId(memberUUID),
-       "enrollment_date": new Date(),
-       "roles": [new ObjectId(standardRoleUUID)]
+      "group_enrollment_ID_Associated": new ObjectId(groupUUID),
+      "enrollee_id": new ObjectId(memberUUID),
+      "enrollment_date": new Date(),
+      "roles": [new ObjectId(standardRoleUUID)]
     }
- )
- 
+  )
+
 }
-async function addRoleToMemberInOrg(groupUUID, memberUUID, roleUUID){
+async function addRoleToMemberInOrg(groupUUID, memberUUID, roleUUID) {
   await organizations_Enrollment_Collection.updateOne(
-    { 
-       "_id": ObjectId(groupUUID),
-       "enrollee_id": new ObjectId(memberUUID) 
+    {
+      "_id": ObjectId(groupUUID),
+      "enrollee_id": new ObjectId(memberUUID)
     }, // filter to match the document with the given _id and enrollee_id
     { $push: { "roles": new ObjectId(roleUUID) } } // update to push the new role ID to the roles array
- )
+  )
 }
-async function removeRoleFromMemberInOrg(groupUUID,memberUUID,roleUUID){
+async function removeRoleFromMemberInOrg(groupUUID, memberUUID, roleUUID) {
   await organizations_Enrollment_Collection.updateOne(
-    { 
-       "_id": ObjectId(groupUUID),
-       "enrollee_id": ObjectId(memberUUID) 
+    {
+      "_id": ObjectId(groupUUID),
+      "enrollee_id": ObjectId(memberUUID)
     }, // filter to match the document with the given _id and enrollee_id
     { $pull: { "roles": ObjectId(roleUUID) } } // update to remove the role ID from the roles array
- )
- return true;
+  )
+  return true;
 }
-async function getBaseMembershipIDFromOrgID(groupUUID){
-  const baseMemberID = await organizationsCollection.findOne({_id: new ObjectId(groupUUID)}, {base_role: 1});
-return baseMemberID.base_role.toString();
-}
-
-function getHighScores() {
-  const query = {};
-  const options = {
-    sort: { score: -1 },
-    limit: 10,
-  };
-  const cursor = scoreCollection.find(query, options);
-  return cursor.toArray();
+async function getBaseMembershipIDFromOrgID(groupUUID) {
+  const baseMemberID = await organizationsCollection.findOne({ _id: new ObjectId(groupUUID) }, { base_role: 1 });
+  return baseMemberID.base_role.toString();
 }
 
-async function getOrgRoleByRoleID(roleID){
-  const Role = await organizationRolesCollection.findOne({_id: roleID});
+
+async function getOrgRoleByRoleID(roleID) {
+  const Role = await organizationRolesCollection.findOne({ _id: roleID });
   return Role;
 
 }
 
-async function getOrgDoc(groupID){
-  return await organizationsCollection.findOne({_id: new ObjectId(groupID)});
+async function getOrgDoc(groupID) {
+  return await organizationsCollection.findOne({ _id: new ObjectId(groupID) });
 }
-function getGroupLables(groupID){
+function getGroupLables(groupID) {
   return null;
 }
-async function getOrgDocByJoinCode(joinCode){
-  return await organizationsCollection.findOne({group_join_code: joinCode});
+async function getOrgDocByJoinCode(joinCode) {
+  return await organizationsCollection.findOne({ group_join_code: joinCode });
 }
 
 async function verifyUserInGroup(groupID, userID) {
@@ -191,23 +218,23 @@ async function checkEnrollmentExists(groupId, userId) {
 }
 
 
-async function getRolesIDsOfUserInGroup(userID,groupID){
-  const EnrollementFound = await organizations_Enrollment_Collection.findOne({group_enrollment_ID_Associated: new ObjectId(groupID),enrollee_id: new ObjectId(userID)});
+async function getRolesIDsOfUserInGroup(userID, groupID) {
+  const EnrollementFound = await organizations_Enrollment_Collection.findOne({ group_enrollment_ID_Associated: new ObjectId(groupID), enrollee_id: new ObjectId(userID) });
   const roleIDs = EnrollementFound.roles;
   return roleIDs;
 }
 
 
 async function getDirectoryUsersIDs(groupID) {
-  const directory = await organizationsCollection.findOne({_id: new ObjectId(groupID)});
-  
+  const directory = await organizationsCollection.findOne({ _id: new ObjectId(groupID) });
+
   let members = directory.group_members;
   //return members;
   if (!Array.isArray(members)) {
     members = members.split(',').map(member => ObjectId(member.trim()));
   }
- 
-  members = await userCollection.find({_id: {$in: members}},{
+
+  members = await userCollection.find({ _id: { $in: members } }, {
     _id: 1,
     profile_image_url: 1,
     first_name: 1,
@@ -222,8 +249,8 @@ async function getDirectoryUsersIDs(groupID) {
     dob: 0,
     gender: 0,
     password: 0,
-    creation_date:0
-  
+    creation_date: 0
+
   }).toArray();
   return members;
 }
@@ -242,67 +269,77 @@ async function checkDocumentExists(documentOwner, survey_origin) {
   //console.log("document_owner:", documentOwner);
   //console.log("survey_origin:", survey_origin);
   const documentExists = await organizationSurveys.findOne({
-  survey_origin: new ObjectId(survey_origin),
-  document_type: 'Questionnaire_Response',
-  document_owner: new ObjectId(documentOwner),
-  }, {_id: 1});
+    survey_origin: new ObjectId(survey_origin),
+    document_type: 'Questionnaire_Response',
+    document_owner: new ObjectId(documentOwner),
+  }, { _id: 1 });
 
   //console.log("documentExists:", documentExists);
-  
+
   return !documentExists;
 }
 
-async function addUserSubmission(submission){
+async function addUserSubmission(submission) {
   await organizationSurveys.insertOne(submission);
-return true;
+  return true;
 }
 
 
 
-async function getSurveyHTML(groupUUID, survey_id){
-  const survey_object = await organizationSurveys.findOne({group_origin: new ObjectId(groupUUID), _id: new ObjectId(survey_id)});
+async function getSurveyHTML(groupUUID, survey_id) {
+  const survey_object = await organizationSurveys.findOne({ group_origin: new ObjectId(groupUUID), _id: new ObjectId(survey_id) });
   return survey_object;
 }
 
 //For websockets:
 async function getAllGroupMembers(memberId) {
   const result = await organizationsCollection.find(
-     {
+    {
       "group_members": new ObjectId(memberId)
-     },
-     {
-        "group_members": 1
-     }
+    },
+    {
+      "group_members": 1
+    }
   );
   const allMembers = [];
   result.forEach(doc => {
-     allMembers.push(...doc.group_members);
+    allMembers.push(...doc.group_members);
   });
   return allMembers;
 }
 
 
 
-const s3 = new AWS.S3();
-function uploadImageToS3(imageData, bucketName, objectName) {
-  // convert the image data to a buffer
-  const fileContent = Buffer.from(imageData, 'base64');
+const s3Client = new S3Client({
+  region: AWS_Region,
+  config: {
 
-  // set the parameters for the S3 upload
-  const params = {
-    Bucket: bucketName,
-    Key: objectName,
-    Body: fileContent
-  };
-
-  // upload the file to S3
-  s3.upload(params, function(err, data) {
-    if (err) {
-      console.log("Error uploading image to S3:", err);
-    } else {
-      console.log("Successfully uploaded image to S3:", data.Location);
+    credentials: {
+      accessKeyId: AWS_AccessKeyID,
+      secretAccessKey: AWS_SecretKey
     }
+  }
+
+});
+// Function to create a Presigned URL for uploading a file to S3
+
+
+
+
+async function createPresignedUrlForUpload(bucketName, objectKey, contentType, expiresIn) {
+  // Set up the PutObjectCommand
+  const putObjectCommand = new PutObjectCommand({
+    Bucket: bucketName,
+    Key: objectKey,
+    ContentType: contentType
   });
+  console.log('Region: ' + AWS_Region);
+  // Generate the Presigned URL for the PutObjectCommand
+  const signedUrl = await getSignedUrl(s3Client, putObjectCommand, {
+    expiresIn,
+  });
+
+  return signedUrl;
 }
 
 module.exports = {
@@ -318,8 +355,7 @@ module.exports = {
   getOrgDocByJoinCode,
   addMemberToOrg,
   enrollNewUser,
-  addScore,
-  getHighScores,
+  addClientPushToken,
   getDirectoryUsersIDs,
   verifyUserInGroup,
   checkEnrollmentExists,
@@ -327,7 +363,8 @@ module.exports = {
   removeRoleFromMemberInOrg,
   getOrgDoc,
   getGroupLables,
-  uploadImageToS3,
+  createPresignedUrlForUpload,
+  updateProfileImageURL,
   getGroupsEnrollmentList,
   getOrgRoleByRoleID,
   getRolesIDsOfUserInGroup,
@@ -336,5 +373,5 @@ module.exports = {
   checkDocumentExists,
   getSurveyHTML,
   addUserSubmission,
-
+  pushNotificationToUsers,
 };
