@@ -1,0 +1,25 @@
+{
+  "name": "organization-tools-service",
+  "version": "1.0.0",
+  "description": "This demonstrates a service for a web application.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "Org-Tools-2023",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.300.0",
+    "@aws-sdk/lib-storage": "^3.300.0",
+    "@aws-sdk/s3-request-presigner": "^3.300.0",
+    "bcrypt": "^5.1.0",
+    "body-parser": "^1.20.2",
+    "cookie-parser": "^1.4.6",
+    "express": "^4.18.2",
+    "firebase-admin": "^11.6.0",
+    "mongodb": "^5.1.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^9.0.0",
+    "ws": "^8.12.0"
+  }
+}

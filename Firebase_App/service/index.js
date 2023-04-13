@@ -30,38 +30,6 @@ app.use(express.static('public'));
 var apiRouter = express.Router();
 app.use(`/api`, apiRouter);
 
-// CreateAuth token for a new user
-apiRouter.post('/auth/register', async (req, res) => {
-  if (await DB.getUserByEmail(req.body.email)) {
-    res.status(409).send({ msg: 'Existing user' });
-  } else if (await DB.getUserByAlias(req.body.alias)) {
-    res.status(409).send({ msg: 'Alias taken by other user' });
-  }
-  else if (await DB.getUserByPhoneNumber(req.body.phone)) {
-    res.status(409).send({ msg: 'Phone number already registerd to another user.\nPlease login or reset your password!' });
-  }
-  else {
-    //Create expected s3 image destination
-    const profile_image_url = "https://cdn-icons-png.flaticon.com/512/456/456212.png";
-
-    const user = await DB.createUser(profile_image_url, req.body.first_name,
-      req.body.last_name, req.body.preferred_name, req.body.share_pref_name, req.body.phone, req.body.share_phone,
-      req.body.email, req.body.share_email, req.body.alias, req.body.dob, req.body.gender, req.body.password);
-
-
-
-    // Set the cookie
-    const alias = user.alias;
-    const userAuthToken = await DB.createAuthTokenForUser(alias);
-    res.set('Authorization', `Bearer ${userAuthToken.token}`);
-    res.send({
-      profile_image_url: user.profile_image_url,
-      creation_date: user.creation_date,
-      id: user._id.toString()
-    });
-  }
-});
-
 //Upload image to S3
 
 
@@ -99,48 +67,102 @@ apiRouter.delete('/auth/logout', (_req, res) => {
   res.status(204).end();
 });
 
-// GetUser returns information about a user This needs to be refactor
-apiRouter.get('/user/:email', async (req, res) => {
-  const user = await DB.getUserByEmail(req.params.email);
-  const token = extractAuth(req);
-  const userFoundOnToken = await DB.getUserByToken(token);
-  if (user) {
-    res.send({
-      id: user._id,
-      authenticated: user.alias === userFoundOnToken.alias,
-      profile_image_url: user.profile_image_url,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      preferred_name: user.preferred_name,
-      email: user.email,
-      alias: user.alias,
-
-    });
-    return;
-  }
-  res.status(404).send({ msg: 'Unknown' });
-});
-
-
-
 // secureApiRouter verifies credentials for endpoints
 var secureApiRouter = express.Router();
 apiRouter.use(secureApiRouter);
 
 secureApiRouter.use(async (req, res, next) => {
-  const token = await extractAuth(req);
-  const decodeValue = admin.auth().verifyIdToken(token);
-    if(decodeValue){
-    next();
-  } else {
-    res.status(401).send({ msg: 'Unauthorized!' });
+  try {
+    const token = await extractAuth(req);
+    const decodeValue = await admin.auth().verifyIdToken(token);
+    if (decodeValue) {
+      //console.log(decodeValue);
+      req.user_id = await decodeValue.user_id;
+      req.user_record = await decodeValue;
+      next();
+    } else {
+      res.status(401).send({ msg: 'Unauthorized!' });
+    }
+  }
+  catch (error) {
+    res.status(500).send({ msg: 'Interal Error!' });
+  }
+
+});
+
+// CreateAuth token for a new user
+secureApiRouter.post('/auth/create/profile', async (req, res) => {
+  const userUID = await req.user_record.user_id;
+  const requestBody = req.body;
+  const user = await DB.getUserDocument(userUID);
+  if (user) {
+    res.status(409).send({ msg: 'Profile already exists' });
+  }
+  else if (DB.isAliasUsed(requestBody.alias)) {
+    res.status(409).send({ msg: 'Alias taken by other user' });
+  }
+  else if (DB.isPhoneNumberUsed(requestBody.phone)) {
+    res.status(409).send({ msg: 'Phone number already registerd to another user.\nPlease login or reset your password!' });
+  }
+  else {
+    //Create expected s3 image destination
+    requestBody.profile_image_url = "https://cdn-icons-png.flaticon.com/512/456/456212.png";
+
+    const userProfile = DB.setNewUserProfile(userUID, requestBody);
+    if (!userProfile) {
+      res.status(500);
+      return;
+    }
+    else {
+      res.status(201).send({ msg: 'Successfuly created public profile!' });
+      return;
+    }
+
+    const user = await DB.createUser(profile_image_url, req.body.first_name,
+      req.body.last_name, req.body.preferred_name, req.body.share_pref_name, req.body.phone, req.body.share_phone,
+      req.body.email, req.body.share_email, req.body.alias, req.body.dob, req.body.gender, req.body.password);
+
+
+
+    // Set the cookie
+    const alias = user.alias;
+    const userAuthToken = await DB.createAuthTokenForUser(alias);
+    res.set('Authorization', `Bearer ${userAuthToken.token}`);
+    res.send({
+      profile_image_url: user.profile_image_url,
+      creation_date: user.creation_date,
+      id: user._id.toString()
+    });
   }
 });
+// GetUser returns information about a user This needs to be refactor
+secureApiRouter.get('/user/:email', async (req, res) => {
+  const user = await DB.getUserDocument(await req.user_record.user_id);
+  if (user) {
+    res.status(200).send({
+      id: user.id,
+      authenticated: true,
+      profile_image_url: req.user_record.picture ?? user.profile_image_url,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      preferred_name: user.preferred_name,
+      email: req.user_record.email
+    })
+    return;
+  }
+  else {
+    res.status(422).send({ msg: 'Incomplete profile!' });
+  }
+});
+
+
+
+
 //get user document for /settings page of user
 secureApiRouter.get('/account/settings', async (req, res) => {
-  const authToken = extractAuth(req);
-  const userToken = await DB.getUserByToken(authToken);
-  const user = await DB.getUserByAlias(userToken.alias);
+  const token = extractAuth(req);
+  const userUID = await extract_UID_From_Token(token)
+  const user = await DB.getUserByFirebaseUID(userUID);
   if (user) {
     const UserDocument = {
       _id: user._id,
@@ -156,7 +178,7 @@ secureApiRouter.get('/account/settings', async (req, res) => {
       alias: user.alias,
       dob: user.dob,
       gender: user.gender,
-      
+
       creation_date: user.creation_date
     }
     res.status(200).send({ UserDocument });
@@ -173,48 +195,35 @@ secureApiRouter.patch('/accounts/change/:setting', async (req, res) => {
 
 secureApiRouter.patch('/services/updateImageURL', async (req, res) => {
   const url = await req.body.url;
-  //then get that user from db with authToken,
-  const authToken = extractAuth(req);
-  //validate AuthToken
-  const userToken = await DB.getUserByToken(authToken);
-  if (!userToken) {
-    res.status(401).send({ msg: 'Not Authorized' });
-    return;
-  }
-  const user = await DB.getUserByAlias(userToken.alias);
+  const userUID = await req.user_record.user_id;
+  const user = await DB.getUserDocument(userUID);
   if (!user) {
-    res.status(404).send({ msg: 'User not found' });
+    res.status(404).send({ msg: 'User profile not found!' });
     return;
   }
-  const userName = user._id.toString();
-  const submission = await DB.updateProfileImageURL(userName, url);
-  console.log(submission);
-  if (submission.acknowledged) {
+
+  const submission = await DB.setPublicProfileImage(userUID, url);
+  if (submission) {
     res.status(201).send({ msg: 'OK' })
+  }
+  else {
+    res.status(500).send({ msg: 'Failed to upload image url to profile!' });
   }
 });
 
 
 secureApiRouter.post('/services/uploads/profiles', async (req, res) => {
   const contentType = await req.body.Content_Type;
-  //then get that user from db with authToken,
-  const authToken = extractAuth(req);
-  //validate AuthToken
-  const userToken = await DB.getUserByToken(authToken);
-  if (!userToken) {
-    res.status(401).send({ msg: 'Not Authorized' });
-    return;
-  }
-  const user = await DB.getUserByAlias(userToken.alias);
+  const userUID = await req.user_record.user_id;
+  const user = await DB.getUserDocument(userUID);
   if (!user) {
-    res.status(404).send({ msg: 'User not found' });
+    res.status(404).send({ msg: 'User profile not found!' });
     return;
   }
-  const userName = user._id.toString()
   const fileExtention = contentType.replace('image/', '');
   const bucketName = 'organization-tools-user-profile-images';
-  const objectKey = `${userName}.${fileExtention}`;
-  const expiresIn = 600; // URL will expire in 10 munutes(600 seconds)
+  const objectKey = `${userUID}.${fileExtention}`;
+  const expiresIn = 60; // URL will expire in 1 munute (60 seconds)
 
   try {
     const uploadUrl = await DB.createPresignedUrlForUpload(bucketName, objectKey, contentType, expiresIn);
@@ -230,60 +239,76 @@ secureApiRouter.post(`/notifications/push/token/store/:token`, async (req, res) 
   const notificationToken = req.params.token;
   const token = extractAuth(req);
   //Validate Token:
-  const successTokenAdd = await DB.addClientPushToken(token, notificationToken);
-  if (successTokenAdd) {
-    res.status(201).send({ msg: `OK` });
-  }
-  else {
-    res.status(400).send({ msg: `Failed to store client push notification` });
-  }
+  //const successTokenAdd = await DB.addClientPushToken(token, notificationToken);
+  //if (successTokenAdd) {
+  res.status(201).send({ msg: `OK` });
+  //}
+  //else {
+  // res.status(400).send({ msg: `Failed to store client push notification` });
+  //}
 })
 
 secureApiRouter.get('/groups/list', async (req, res) => {
-  const token = extractAuth(req);
-  const userToken = await DB.getUserByToken(token);
-  //Insert validate token
 
-
-  const user = await DB.getUserByAlias(userToken.alias);
-  const EnrollementList = await DB.getGroupsEnrollmentList(user._id);
-  const groupList = [];
-  for (let i = 0; i < EnrollementList.length; ++i) {
-    const tempOrg = await DB.getOrgDoc(EnrollementList[i].group_enrollment_ID_Associated.toString());
-    //console.log(tempOrg);
-    const tempOrgRoles = EnrollementList[i].roles;
-    const orgRolesTempList = [];
-    for (let x = 0; x < tempOrgRoles.length; ++x) {
-      //call get role by id
-      const tempRole = await DB.getOrgRoleByRoleID(tempOrgRoles[x]);
-      //extract name and push to list;
-      const tempRoleName = tempRole.role_title;
-      orgRolesTempList.push(tempRoleName);
-    }
-
-    //console.log(tempOrgRoles);
-    //make object values for html page to be injected to the table:
-    const dateString = EnrollementList[i].enrollment_date.toString();
-    const tIndex = dateString.indexOf('T');
-    const datePart = dateString.substring(0, tIndex);
-    let roles = '';
-    for (let r = 0; r < orgRolesTempList.length; ++r) {
-      if (r === orgRolesTempList.length - 1) {
-        roles += orgRolesTempList[r];
-      } else {
-        roles += orgRolesTempList[r] + ', '
-      }
-    }
-    const groupLine = {
-      id: tempOrg._id.toString(),
-      OrganizationName: tempOrg.group_name,
-      Description: tempOrg.group_description,
-      MemberSince: dateString,
-      MyOrgRoles: roles
-    }
-    groupList.push(groupLine);
+  const user = await DB.getUserDocument(await req.user_record.user_id);
+  if (!user) {
+    res.status(401).send({ msg: 'User is not registered, please create account.' })
+    return;
   }
-  if (groupList) {
+  const groupList = [];
+  var Enrollments = user.collections.Enrollments;
+  if (!Enrollments) {
+    Enrollments = [];
+  }
+  for (let i = 0; i < Enrollments.length; ++i) {
+    const EnrollmentTemp = Enrollments[i];
+    const OrgTempRef = EnrollmentTemp.group_id;
+    const RolesRefList = EnrollmentTemp.roles;
+    const OrgData = await OrgTempRef.get();
+    if (OrgData.exists) {
+      // Access the fields of the document using the `data()` method:
+      const data = OrgData.data();
+      const OrgName = data.group_name;
+      const OrgDesc = data.group_description;
+      const OrgID = OrgData.id;
+      const OrgStatus = EnrollmentTemp.enrollment_status;
+      const orgRolesTempList = [];
+      for (let x = 0; x < RolesRefList.length; ++x) {
+        const RoleTempRef = RolesRefList[x];
+        const RoleDataRef = await RoleTempRef.get();
+        if (RoleDataRef.exists) {
+          const roleData = RoleDataRef.data();
+          const roleTitle = roleData.role_title;
+          orgRolesTempList.push(roleTitle);
+        }
+      }
+      let roles = '';
+      for (let r = 0; r < orgRolesTempList.length; ++r) {
+        if (r === orgRolesTempList.length - 1) {
+          roles += orgRolesTempList[r];
+        } else {
+          roles += orgRolesTempList[r] + ', '
+        }
+      }
+      //Add user Actions Later
+      const groupLine = {
+        id: OrgID,
+        OrganizationName: OrgName,
+        Description: OrgDesc,
+        MemberSince: EnrollmentTemp.enrollment_date.toDate(),
+        MyOrgRoles: roles,
+        Status: OrgStatus
+      }
+      groupList.push(groupLine);
+      console.log(groupLine)
+    }
+
+
+
+
+  }
+
+  if (groupList.length > 0) {
     res.status(200).send({
       groupList
     });
@@ -300,12 +325,49 @@ secureApiRouter.get('/groups/list', async (req, res) => {
 
 // getDirectory
 secureApiRouter.get('/:groupID/directory', async (req, res) => {
-  //get current user
-  const token = extractAuth(req);
-  const userToken = await DB.getUserByToken(token);
-  const user = await DB.getUserByAlias(userToken.alias);
-  //check to see if that member is in the group
   const groupID = req.params.groupID;
+  const user = await DB.getUserDocument(await req.user_record.user_id);
+  //verify enrollment
+  var Enrollments = user.collections.Enrollments;
+  if (!Enrollments) {
+    res.status(401).send({ msg: 'User not enrolled in any groups!' });
+  }
+  for (let index = 0; index < Enrollments.length; ++index) {
+    const currentEnrollment = Enrollments[index];
+    const group_enrollment_assoicated_ref = currentEnrollment.group_id;
+    const OrgData = await group_enrollment_assoicated_ref.get();
+    if (OrgData.exists) {
+      const data = OrgData.data();
+      if (OrgData.id === groupID) {
+        if (currentEnrollment.enrollment_status === 'Enrolled') {
+          //Call get directory regular
+          const directory = await getDirectoryRegular(groupID);
+          res.status(200).send({
+            OrgName: directory.OrgName,
+            data: directory.data
+          });
+          return;
+        }
+        else if (currentEnrollment.enrollment_status === 'Action Pending'){
+          //Check if survey is present
+          //if it is present, verify enrollment is approved:
+          //If not approved set to Waiting Approval status return 
+          //If it is Approved call regular directory
+          //update status to Enrolled
+          
+          //Fetch Survey for User to fill:
+        }
+        else if(currentEnrollment.enrollment_status === 'Waiting Approval'){
+          res.status(202).send({msg: 'Waiting approval from a leader...'});
+          return;
+        }
+      }
+    }
+  }
+  res.status(403).send({ msg: `You don't have permission to access this group, please join the group with a join code provided by your group leader.` });
+
+  return;
+  //const groupID = req.params.groupID;
   const directoryIDs = await DB.getDirectoryUsersIDs(groupID);
   const Organization = await DB.getOrgDoc(groupID);
   const directoryBuilt = [];
@@ -369,29 +431,64 @@ secureApiRouter.get('/:groupID/directory', async (req, res) => {
 
 //Join Request:
 secureApiRouter.post('/groups/join/:joinCode', async (req, res) => {
-  const token = extractAuth(req);
-  //this get the user's token object
-  const userToken = await DB.getUserByToken(token);
-  //Validate Token
-
-  //Extract user from with alias:
-  const User = await DB.getUserByAlias(userToken.alias);
-  //Get Group Org Doc:
-  const OrgDocs = await DB.getOrgDocByJoinCode(req.params.joinCode);
-  const requiresSurveyEnrollemnt = OrgDocs.survey_required;
-  //Check if user is already in group
-  const is_enrolled = await DB.checkEnrollmentExists(OrgDocs._id, User._id);
-  if (is_enrolled) {
-    res.status(409).send({ msg: 'User already enrolled in group!' })
+  const userID = await req.user_record.user_id;
+  const user = await DB.getUserDocument(userID);
+  const group = await DB.getFirebaseOrgDocByJoinCode(req.params.joinCode);
+  if (!group) {
+    //Null
+    res.status(404).send({ msg: 'Group not found, please verify group code and try again' })
     return;
   }
+  const group_id = group.id;
+  //Verify no enrollment
+  const is_enrolled = await DB.getFirebaseDocument(`User-Public-Profile/${userID}/Enrollments/${group_id}`);
 
-  //check if user is banned
+  const EnrollmentDoc = await is_enrolled.get();
+  if (EnrollmentDoc.exists) {
+    console.log("User already enrolled!");
+    res.status(409).send({ msg: 'User already Enrolled!' });
+    return;
+  }
+  const joinSurveyRequired = group.survey_required;
+  const approvalJoinRequired = group.requires_approval;
+  //Create new Enrollment Document data here:
+  var enrollmentStatus = '';
+  if (approvalJoinRequired) {
+    enrollmentStatus = 'Waiting Approval';
+  }
+  if (joinSurveyRequired) {
+    enrollmentStatus = 'Attention Required';
+  }
+  const base_role = await group.base_role.get();
+  if (!base_role.exists) {
+    res.status(500).send({ msg: `Base role not available, contact administrator to fix!` });
+    return;
+  }
+  //GetBaseRoleRef
+  const baseRoleRef = DB.getReferencedDocument(`Organizations/${group_id}/Roles/${base_role.id}`);
+  //Get Ref GroupID
+  const groupRef = DB.getReferencedDocument(`Organizations/${group_id}`);
+
+  const EnrollmentData = {
+    enrollment_status: enrollmentStatus,
+    group_id: groupRef,
+    roles: [baseRoleRef]
+  }
+
+
+
+  try {
+    await DB.appendUserEnrollment(group_id, userID);
+    await DB.addNewEnrollment(`User-Public-Profile/${userID}/Enrollments`, group_id, EnrollmentData);
+  }
+  catch (error) {
+    console.error("Error: ", error);
+  }
 
   //Join Group
-  const enrollSuccess = joinGroup(OrgDocs._id.toString(), User._id.toString());
+  const enrollSuccess = true;
   if (enrollSuccess) {
-    res.status(200).send({ groupID: OrgDocs._id.toString() });
+    res.status(200).send({ groupID: group_id });
   }
   else {
     res.status(500);
@@ -404,11 +501,10 @@ secureApiRouter.post('/groups/join/:joinCode', async (req, res) => {
 secureApiRouter.get('/:groupID/membership/validate', async (req, res) => {
   const token = extractAuth(req);
   //this get the user's token object
-  const userToken = await DB.getUserByToken(token);
-  //Validate Token
+  const userUID = await extract_UID_From_Token(token)
 
-  //Extract user from with alias:
-  const User = await DB.getUserByAlias(userToken.alias);
+
+  const User = await DB.getUserByFirebaseUID(userUID);
   const requiredSurveys = await DB.getRequiredSurveysGroups(req.params.groupID);
   var survey_pending = [];
   //console.log(requiredSurveys);
@@ -501,33 +597,42 @@ secureApiRouter.post('/:groupID/surveys/:surveyDocumentID/submit', async (req, r
 
 //Get the info on group requesting to join and verify they are not a member of the group.
 secureApiRouter.get('/group/:JoinCode/info', async (req, res) => {
-  const token = extractAuth(req);
-  const userToken = await DB.getUserByToken(token);
-  const User = await DB.getUserByAlias(userToken.alias);
-  //validate Tokens
-  const OrgDocs = await DB.getOrgDocByJoinCode(req.params.JoinCode);
-  if (!OrgDocs) {
+  const userID = await req.user_record.user_id;
+  const user = await DB.getUserDocument(userID);
+  if (!user) {
+    res.status(500).send({ msg: 'User profile not found!' });
+  }
+
+  const group = await DB.getFirebaseOrgDocByJoinCode(req.params.JoinCode);
+  if (!group) {
     //Null
     res.status(404).send({ msg: 'Group not found, please verify group code and try again' })
     return;
   }
-  const User_Owner = await DB.getUserBy_id(OrgDocs.group_owner);
-  //Check enrollment:
-  const is_enrolled = await DB.checkEnrollmentExists(OrgDocs._id, User._id);
-  if (is_enrolled) {
+  const group_id = group.id;
+  //Verify no enrollment
+  const is_enrolled = await DB.getFirebaseDocument(`User-Public-Profile/${userID}/Enrollments/${group_id}`);
+  const EnrollmentDoc = await is_enrolled.get();
+  if (EnrollmentDoc.exists) {
+    console.log("User already enrolled!");
     res.status(409).send({ msg: 'User already Enrolled!' });
     return;
   }
+  const User_Owner = await group.group_owner.get();
+  if (!User_Owner.exists) {
+    res.status(404).send({ msg: `Group found, group owner not found. If you know the owner's contact info, notify them ASAP!` })
+  }
+  const group_owner_details = await User_Owner.data();
   res.status(200).send(
     {
-      group_name: OrgDocs.group_name,
-      group_description: OrgDocs.group_description,
-      group_creation: OrgDocs.group_creation_date,
-      member_count: OrgDocs.group_members.length,
-      survey_required: OrgDocs.survey_required,
-      survey_id: OrgDocs.survey_id,
-      owner_name: User_Owner.preferred_name,
-      owner_contact: User_Owner.email,
+      group_name: group.group_name,
+      group_description: group.group_description,
+      group_creation: group.group_creation_date.toDate(),
+      member_count: group.group_members.length,
+      survey_required: group.survey_required,
+      //survey_id: group.survey_id,
+      owner_name: group_owner_details.pref_name,
+      owner_contact: group_owner_details.email,
     })
 });
 
@@ -578,6 +683,95 @@ async function joinGroup(groupUUID, userUUID) {
   await DB.enrollNewUser(groupUUID, userUUID, baseMemberID);
   //Send enrollment completed:
   return true;
+}
+
+async function getDirectoryRegular(groupID) {
+  const Organization = await DB.getDirectoryMembers(groupID);
+  console.log(Organization);
+  const directory = [];
+  const DirectoryRefList = Organization.group_members;
+  for (let index = 0; index < DirectoryRefList.length; ++index) {
+    const MemberTempRef = DirectoryRefList[index];
+    const MemberTempObj = await MemberTempRef.get();
+    if (!MemberTempObj.exists) {
+      console.log("Member not found");
+      continue;
+    }
+    const MemberTempData = MemberTempObj.data();
+    //Set diplay name for member in directory
+    var currUser_display_name = '';
+    if (MemberTempData.share_pref_name) {
+      currUser_display_name = MemberTempData.pref_name;
+    }
+    else {
+      currUser_display_name = MemberTempData.first_name + ' ' + MemberTempData.last_name;
+    }
+    //Set Lables
+
+    //Set Roles
+    //First get enrollment document
+    console.log(MemberTempObj.id);
+    console.log(groupID);
+
+    const EnrollmentDocRef = await DB.getFirebaseDocument(`User-Public-Profile/${MemberTempObj.id}/Enrollments/${groupID}`);
+    const EnrollmentDoc = await EnrollmentDocRef.get();
+    if (!EnrollmentDoc.exists) {
+      console.log("User enrollment not found!");
+    }
+    //Extract enrollment data:
+    const EnrollmentData = EnrollmentDoc.data();
+    if (EnrollmentData.enrollment_status !== "Enrolled") {
+      console.log("User not fully enrolled");
+      continue;
+    }
+    //With enrollment extracted, extract roles
+    const RolesRefList = EnrollmentData.roles;
+    const orgRolesTempList = [];
+    for (let x = 0; x < RolesRefList.length; ++x) {
+      const RoleTempRef = RolesRefList[x];
+      const RoleDataRef = await RoleTempRef.get();
+      if (RoleDataRef.exists) {
+        const roleData = RoleDataRef.data();
+        const roleTitle = roleData.role_title;
+        orgRolesTempList.push(roleTitle);
+      }
+    }
+    let roles = '';
+    for (let r = 0; r < orgRolesTempList.length; ++r) {
+      if (r === orgRolesTempList.length - 1) {
+        roles += orgRolesTempList[r];
+      } else {
+        roles += orgRolesTempList[r] + ', '
+      }
+    }
+
+    const userObject = {
+      name: currUser_display_name,
+      //secondary_lable: lable2,
+      roles: roles,
+      profile_image_url: MemberTempData.profile_image_url,
+      id: MemberTempObj.id,
+
+    }
+    directory.push(userObject);
+  }
+
+
+
+  return {
+    OrgName: Organization.group_name,
+    data: directory
+  }
+}
+
+async function extract_UID_From_Token(token) {
+  const decodeValue = await admin.auth().verifyIdToken(token);
+  if (decodeValue) {
+    return decodeValue.uid;
+  }
+  else {
+    return null;
+  }
 }
 
 new PeerProxy(httpService);

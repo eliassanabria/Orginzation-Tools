@@ -1,0 +1,12 @@
+.organization-table-associated{
+    display: fixed;
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    font-size: 1rem;
+    
+}
+.card{
+  z-index: -9;
+}

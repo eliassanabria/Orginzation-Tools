@@ -1,0 +1,109 @@
+.directory_user_small_profile_icon_boarder .overlayUserStatusOffline {
+  position: absolute;
+  top: 50%;
+  left: 65%;
+  background-color: rgb(180, 178, 178);
+  border-radius: 50%;
+  height: 16px;
+  width: 16px;
+  bottom: 0;
+  right: 0;
+}
+
+.directory_user_small_profile_icon_boarder .overlayUserStatusOnline {
+  position: absolute;
+  top: 50%;
+  left: 65%;
+  background-color: rgb(72, 171, 11);
+  border-radius: 50%;
+  height: 16px;
+  width: 16px;
+  bottom: 0;
+  right: 0;
+}
+
+.directory_user_small_profile_icon_boarder .overlayUserStatusAway {
+  position: absolute;
+  top: 50%;
+  left: 65%;
+  background-color: rgb(230, 184, 59);
+  border-radius: 50%;
+  height: 16px;
+  width: 16px;
+  bottom: 0;
+  right: 0;
+}
+
+.directory_user_small_profile_icon_boarder .overlayUserStatusDND {
+  position: absolute;
+  top: 50%;
+  left: 65%;
+  background-color: rgb(220, 10, 10);
+  border-radius: 50%;
+  height: 16px;
+  width: 16px;
+  bottom: 0;
+  right: 0;
+}
+
+.Directory_User_Object_Boarder .Directory_User_Object_Boarder {
+  width: 120px;
+  height: 150px;
+  position: relative;
+  
+}
+
+.directory_user_small_profile_icon_boarder {
+  width: 100px;
+  height: 100px;
+  align-items: center;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.Directory_User_Object_Boarder {
+  width: 150px;
+  height: 170px;
+  position: relative;
+  text-align: center;
+  z-index: -1;
+  
+}
+
+.UserPreferredName {
+  font-weight: bold;
+}
+
+.UserApartmentLable {
+  font-size: small;
+}
+
+.UserCallingsLable {
+  font-size: smaller;
+}
+
+.DirectoryGridLayout {
+  padding: 10px;
+  grid-template-columns: repeat(auto-fill, []1fr);
+}
+
+.directory_user_small_profile_icon_boarder .directory_user_small_profile_icon {
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  text-align: center;
+}
+
+#directory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-gap: 1rem;
+  
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
+}
