@@ -102,8 +102,18 @@
   
 }
 
-.center {
+.Regcenter {
   display: flex;
   justify-content: center;
+  flex-direction: row;
+}
+.Regleft {
+  display: flex;
+  justify-content: left;
+  flex-direction: row;
+}
+.Regright {
+  display: flex;
+  justify-content: right;
   flex-direction: row;
 }

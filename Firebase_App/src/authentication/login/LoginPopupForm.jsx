@@ -3,7 +3,7 @@ import { CAlert } from '@coreui/react'
 import 'bootstrap';
 import '../AuthPopup.css';
 import { Spinner } from '../../addons_React/Spinners/Spinner';
-import { signInWithEmailAndPassword, signInWithGoogle, registerWithEmailAndPassword } from './Firebase_Assets/authFunctions';
+import { signInWithEmailAndPassword, signInWithGoogle, registerWithEmailAndPassword, signInWithApple} from './Firebase_Assets/authFunctions';
 import { auth } from './Firebase_Assets/firebaseConfig';
 export function LoginPopupForm(props) {
   const [displayLoader, setLoader] = useState(false);
@@ -16,8 +16,9 @@ export function LoginPopupForm(props) {
    const loginWithGoogle = async(event)=> {
     event.preventDefault();
     try {
-      await signInWithGoogle(auth)
       setLoader(true);
+      await signInWithGoogle(auth)
+      
 
       //window.location.href = targetURL;
     }
@@ -43,10 +44,19 @@ export function LoginPopupForm(props) {
       } else {
         console.error('Error signing in with Google:', error);
       }
-      alert(error);
-
       setLoader(false);
     }
+  }
+  const signInWithApplePopup = async(event) =>{
+    event.preventDefault();
+    try{
+      setLoader(true);
+      await signInWithApple(auth);
+    }catch(error){
+      alert(error);
+    }
+    setLoader(false);
+
   }
   async function singInWithUsernameAndPassword(event) {
     event.preventDefault();
@@ -86,8 +96,15 @@ export function LoginPopupForm(props) {
 
   return (
     <div>
-      <a href="#" class="login-button" onClick={loginWithGoogle} >
-        <img src="https://lh3.googleusercontent.com/COxitqgJr1sJnIDe8-jiKhxDx1FrYbtRHKJ9z_hELisAlapwE9LUPh6fcXIfb5vwpbMl4xl9H9TRFPc5NOO8Sb3VSgIBrfRYvW6cUA" alt="Google logo" class="google-logo"></img>Login with Google</a>
+      <a href="#" className="login-button" onClick={loginWithGoogle} >
+        <img src="https://lh3.googleusercontent.com/COxitqgJr1sJnIDe8-jiKhxDx1FrYbtRHKJ9z_hELisAlapwE9LUPh6fcXIfb5vwpbMl4xl9H9TRFPc5NOO8Sb3VSgIBrfRYvW6cUA" alt="Google logo" className="google-logo"></img>Login with Google</a>
+        <br></br><br></br>
+        {/* <br></br><br></br>
+        <button class="apple-button" onClick={signInWithApplePopup} disabled>
+  <span class="apple-icon"></span>
+  <span class="apple-text">Sign in with Apple</span>
+</button>
+
       <br></br><br></br>
       {displayLoader && <Spinner />}
       <form id="LoginForm" onSubmit={singInWithUsernameAndPassword}>
@@ -99,6 +116,7 @@ export function LoginPopupForm(props) {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           required
+          disabled
         />
         <br />
         <br />
@@ -110,15 +128,16 @@ export function LoginPopupForm(props) {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           required
+          disabled
         />
         <br />
         <br />
-        <input type="button" className="btn btn-secondary form-button" value="Register" onClick={registerWithEmail} />
-        <input type="submit" className="btn btn-primary form-button" value="Login" />
+        <input type="button" className="btn btn-secondary form-button" value="Register" onClick={registerWithEmail} disabled/>
+        <input type="submit" className="btn btn-primary form-button" value="Login"disabled />
 
         <br />
         <br />
-      </form>
+      </form> */}
 
       <button className="btn btn-light"onClick={closePopup}>Cancel</button>
     </div>

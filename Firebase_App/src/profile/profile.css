@@ -102,3 +102,52 @@
 .rounded {
     border-radius: 0.25rem!important;
 }
+
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  
+  .user-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .profile-image {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin-right: 20px;
+  }
+  
+  .user-details {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .user-alias {
+    font-size: 14px;
+    font-style: italic;
+    margin-bottom: 5px;
+  }
+  
+  .groups-title {
+    margin-bottom: 10px;
+  }
+  
+  @media (max-width: 576px) {
+    .user-info {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  
+    .profile-image {
+      margin-bottom: 20px;
+      margin-right: 0;
+    }
+  }
+  

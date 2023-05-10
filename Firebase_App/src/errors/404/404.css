@@ -1,9 +1,8 @@
   
-#Er404 {
-    background-color: #95c2de;
-  }
+
   
   .mainbox {
+    display: flex;
     background-color: #95c2de;
     margin: auto;
     height: 600px;

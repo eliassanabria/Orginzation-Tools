@@ -5,6 +5,12 @@ import axios from 'axios';
 import { uploadUserImage} from '../addons_React/ProfileImageUploader';
 import { AuthState } from '../authentication/login/AuthState';
 import { Spinner } from '../addons_React/Spinners/Spinner';
+import { Elements } from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import SubscriptionForm from './SubscriptionPlan';
+import ManageBillingButton from './ManageBillingBtns';
+import StripePricingTable from './StripePrincingTable';
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 export function Settings(props) {
   const authenticated = props.Authenticated;
   const[displayLoader, setLoader] = useState(false);
@@ -15,6 +21,7 @@ export function Settings(props) {
   const [DOB, setDOB] = React.useState(localStorage.getItem('DOB') || '01/01/1999');
   const [PrefName, setPrefName] = React.useState(localStorage.getItem('preferred_name') || 'Guest User');
   const [Alias, setAlias] = React.useState(localStorage.getItem('alias') || 'Visitor');
+  const [userUID, setUserUID] = useState('');
   const fileInputRef = useRef(null);
   const [CroppedFile, setCropFile] = useState(null);
   const [image, setImage] = useState(localStorage.getItem('profile_image_url')||"https://cdn-icons-png.flaticon.com/512/456/456212.png");
@@ -108,51 +115,58 @@ export function Settings(props) {
       };
     };
   }
+  const handleFileButtonClick = () => {
+    fileInputRef.current.click();
+  };
 
   return (
-    <div>
-      {displayLoader && <Spinner/>}
+    <div className="container mt-4">
+      {displayLoader && <Spinner />}
       {authenticated !== AuthState.Authenticated &&
         <LoginPopupForm targetURL={`./settings`} />
       }
       
       <section className="User-Settings">
-      <h1>My Account</h1>
-      {image && <img src={image} alt="Preview" className='ProfileImageRound' />}
-      <input type="file" onChange={handleImageChange} required ref={fileInputRef} accept="image/png, image/jpeg" />
-      <button id='imageUploader' onClick={uploadImage}>Upload Image</button>
-        <div>
-          <label><b>First Name:</b></label>
-          <label id="FirstNameSetting">{FirstName}</label>
-        </div>
-        <div>
-          <label><b>Last Name:</b></label>
-          <label id="LastNameSetting">{LastName}</label>
-        </div>
-        <div>
-          <lable><b>Preferred Name:</b></lable>
-          <lable id="PrefferedNameSetting">{PrefName}</lable>
-        </div>
-        <div>
-          <label><b>Email Address:</b></label>
-          <input type="email" id="userEmailSetting" disabled placeholder="email@mail.com" value={EmailAddress} />
-          <input type="button" id="change-email-btn" value="Change Email" disabled />
-        </div>
-        <div>
-          <label><b>Phone:</b></label>
-          <input type="tel" id="userPhoneSetting" disabled placeholder="801-422-0000" value={PhoneNumber} />
-          <input type="button" id="change-phone-btn" value="Change Phone" disabled />
-          <label id="phone verified">Not Verified</label>
-        </div>
-        <div>
-          <label><b>Date of Birth:</b></label>
-          <input type="date" id="UserDOBSetting" value={DOB} disabled />
-        </div>
-        <div>
-          
-          <input type="button" id="change-password" value="Change Password" disabled />
-        </div>
-      </section>
-    </div>
-  );
+        <h1 className="mb-4">My Account</h1>
+        <div className="text-center mb-4">
+        {image && <img src={image} alt="Preview" className="ProfileImageRound rounded-circle" style={{ width: '150px', height: '150px' }} />}
+        <input type="file" onChange={handleImageChange} required ref={fileInputRef} accept="image/png, image/jpeg" className="d-none" />
+        <button className="btn btn-secondary mt-2" onClick={handleFileButtonClick} enabled>Choose Image</button>
+        <button id='imageUploader' className="btn btn-primary mt-2 ms-2" onClick={uploadImage}>Upload Image</button>
+      </div>
+        <form>
+          <div className="mb-3">
+            <label htmlFor="FirstNameSetting" className="form-label">First Name</label>
+            <input type="text" className="form-control" id="FirstNameSetting" value={FirstName} readOnly />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="LastNameSetting" className="form-label">Last Name</label>
+            <input type="text" className="form-control" id="LastNameSetting" value={LastName} readOnly />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="PrefferedNameSetting" className="form-label">Preferred Name</label>
+            <input type="text" className="form-control" id="PrefferedNameSetting" value={PrefName} readOnly />
+          </div>
+          <div className="mb-3">
+            <label htmlFor="userEmailSetting" className="form-label">Email Address</label>
+            <input type="email" className="form-control" id="userEmailSetting" placeholder="email@mail.com" value={EmailAddress} disabled />
+            <div className="form-text">Signed in with Google</div>
+          </div>
+          <div className="mb-3">
+            <label htmlFor="userPhoneSetting" className="form-label">Phone</label>
+            <input type="tel" className="form-control" id="userPhoneSetting" placeholder="801-422-0000" value={PhoneNumber} disabled />
+          </div>
+          <div className="mb-3">
+        <label htmlFor="UserDOBSetting" className="form-label">Date of Birth</label>
+        <input type="date" className="form-control" id="UserDOBSetting" value={DOB} disabled />
+      </div>
+    </form>
+    <ManageBillingButton />
+    <StripePricingTable />
+    {/* <Elements stripe={stripePromise}>
+      <SubscriptionForm uid={userUID} />
+    </Elements> */}
+  </section>
+</div>
+);
 }

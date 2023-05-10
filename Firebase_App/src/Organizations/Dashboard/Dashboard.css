@@ -1,0 +1,25 @@
+.profile-picture-dash{
+    height: 80px;
+    border-radius: 50%;
+}
+.user-name{
+
+}
+.user-roles{
+    
+}
+.rounded-btn {
+    border-radius: 20px;
+  }
+  .button-group .btn {
+    width: 100%;
+    white-space: normal;
+    margin-bottom: 10px;
+  }
+  
+  @media (min-width: 768px) {
+    .button-group .btn {
+      width: auto;
+    }
+  }
+  

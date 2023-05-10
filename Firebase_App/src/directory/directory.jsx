@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext, useMemo } from 'react';
-import { useParams } from 'react-router-dom'
+import { useParams , NavLink} from 'react-router-dom'
 import { AuthState } from '../authentication/login/AuthState'
 import SocketContext from '../SocketContext';
 //import { Socket, UserStatusChangeEvent } from '../addons_React/socketCommunicator';
@@ -53,7 +53,7 @@ export function Directory(props) {
 
   //const Authenticated = props.Authenticated;
   //Extract Group ID
-  const { id } = useParams();
+  const { groupID } = useParams();
   const [OrganizationName, setOrgName] = useState(localStorage.getItem('Recent-Org-Directory-Name') || 'Organization Name');
   const [Message, setMessage] = useState('Loading...');
   const [Action, setAction] = useState(null);
@@ -66,7 +66,6 @@ export function Directory(props) {
     setLoader(false);
     if (Authenticated !== AuthState.Authenticated) {
       gridContainer.innerHTML = "Please log in to view this directory";
-      //gridContainer.appendChild();
       return;
     }
     //console.log("Grid is :" + gridContainer);
@@ -94,7 +93,7 @@ export function Directory(props) {
     //     }
     //   })
 
-    const apiUrl = "/api/" + id + '/directory';
+    const apiUrl = "/api/" + groupID + '/directory';
     //var directoryCell = gridContainer.children[0];
     //gridContainer = "";
     // Call the API and get the response
@@ -201,15 +200,20 @@ export function Directory(props) {
   },[Authenticated, socket, ApprovalStatus]);
   return (
     <div>
-      
-      <header>
-        <div className="center">
+      <section>
+        <div className="Regcenter">
           <b> {OrganizationName} </b>
         </div>
-        <div className="center">
+        <div className="Regcenter">
           Directory
+          
         </div>
-      </header>
+        <b className='Regright'><NavLink className='nav-link' to={`/groups/${groupID}/settings`}>
+              <i className="fas fa-cog fa-lg" style={{ color: '#0a2a52' }}></i>
+            </NavLink></b>
+        
+        
+      </section>
       <div id="directory-grid">
         <div className="directory-item">
           <div className="Directory_User_Object_Boarder">

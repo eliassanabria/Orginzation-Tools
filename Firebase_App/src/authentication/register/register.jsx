@@ -22,6 +22,9 @@ export function ProfileSetup(props) {
   const [sharePhone, setPhoneDisp] = useState(true);
   const [dob, setDOB] = useState();
   const [gender, setGender] = useState('maleGender'); const [password, setPassword] = useState('')
+  const [aliasError, setAliasError] = useState('');
+  const [dobError, setDobError] = useState('');
+
 
   const [image, setImage] = useState("https://cdn-icons-png.flaticon.com/512/456/456212.png");
   const formatPhoneNumber = (input) => {
@@ -81,7 +84,20 @@ export function ProfileSetup(props) {
     const formattedNumber = formatPhoneNumber(input);
     setPhoneNumber(formattedNumber);
   };
- 
+  const validateAlias = (alias) => {
+    const aliasPattern = /^[a-z0-9._]+$/;
+
+    if (alias.length < 5) {
+      setAliasError('Alias must be at least 5 characters long');
+      return false;
+    } else if (!aliasPattern.test(alias)) {
+      setAliasError('Alias can only contain lowercase letters, digits, dots, and underscores');
+      return false;
+    } else {
+      setAliasError('');
+      return true;
+    }
+  };
   const handleFirstNameUpdateChange = (event) => {
     const input = event.target.value;
     setFirstName(input);
@@ -92,12 +108,40 @@ export function ProfileSetup(props) {
   };
   const handleAliasUpdateChange = (event) => {
     const input = event.target.value;
+    validateAlias(input);
     setAlias(input);
   };
-  const handleDOBUpdateChange = (event) => {
-    const input = event.target.value;
-    setDOB(input);
+  const handleDOBUpdateChange = (e) => {
+    const newDob = e.target.value;
+    setDOB(newDob);
+
+    validateAge(newDob);
   };
+
+  const calculateAge = (birthdate) => {
+    const birthDate = new Date(birthdate);
+    const currentDate = new Date();
+    const age = currentDate.getFullYear() - birthDate.getFullYear();
+    const monthDifference = currentDate.getMonth() - birthDate.getMonth();
+
+    if (monthDifference < 0 || (monthDifference === 0 && currentDate.getDate() < birthDate.getDate())) {
+      return age - 1;
+    }
+
+    return age;
+  };
+  const validateAge = (birthdate) => {
+    const age = calculateAge(birthdate);
+
+    if (age < 16) {
+      setDobError('You must be at least 16 years of age');
+      return false;
+    } else {
+      setDobError('');
+      return true;
+    }
+  };
+
   const handlePrefNameUpdateChange = (event) => {
     const input = event.target.value;
     setPreferredName(input);
@@ -130,13 +174,12 @@ export function ProfileSetup(props) {
     //Check successful creation then attempt to upload image to S3:
     if (response?.status === 201) {
       await uploadUserImage(CroppedFile);
+      window.location.reload();
     }
     else if (response?.status === 409) {
       const body = await response.json();
       alert(`⚠ Error: ${body.msg}`);
     }
-    window.location.reload();
-    //Upload image to S3 Bucket
   }
 
   useEffect(() => {
@@ -164,10 +207,12 @@ export function ProfileSetup(props) {
           value={shareEmailOrg}
 
         />
-        <label htmlFor="shareEmailOrg">Share with Organizations</label>
+        <label htmlFor="shareEmailOrg">Share with Orgs</label>
+        {aliasError && (<small className="text-danger">{aliasError}</small> )}
         <br />
-        <label htmlFor="Alias">Alias: </label>
-        <input type='text' id='alias' name='userAlias' value={alias} onChange={handleAliasUpdateChange} required />
+        <label htmlFor="Alias">Alias:  </label>
+        <input type='text' id='alias' name='userAlias' value={alias} pattern="[a-z._]*"
+          minlength="5" onChange={handleAliasUpdateChange} required />
         <br />
         <label htmlFor="firstNameRegister">First Name: </label>
         <input
@@ -198,7 +243,7 @@ export function ProfileSetup(props) {
           type="text"
           id="prefName"
           name="varText"
-          placeholder="Preffered name"
+          placeholder="Preferred name"
           spellCheck=""
           value={preferred_name}
           required
@@ -211,9 +256,9 @@ export function ProfileSetup(props) {
           value={sharePrefNameWithOrg}
           defaultChecked
         />
-        <label htmlFor="checkbox1">Display In Organization Directory</label>
+        <label htmlFor="checkbox1">Display In Org Directory</label>
         <br />
-        
+
         <label htmlFor="phone">Phone Number:</label>
         <input
           type='tel'
@@ -232,7 +277,7 @@ export function ProfileSetup(props) {
           value={sharePhone}
           defaultChecked
         />
-        <label htmlFor="sharePhoneWard">Share with Organizations</label>
+        <label htmlFor="sharePhoneWard">Share with Orgs</label>
         <br />
         <label htmlFor="DOB_Reg">Date of Birth: </label>
         <input
@@ -266,11 +311,13 @@ export function ProfileSetup(props) {
           onChange={(e) => setGender(e.target.value)}
         /><label style={{ color: 'red' }}>*</label>
         <br />
-        <button type="submit">Save Public Profile</button> <button onClick={logout}>Logout</button>
-        <br/>
+        <div className="mb-3">
+          <button type="submit" className="btn btn-primary">Save Public Profile</button>
+          <button onClick={logout} className="btn btn-secondary ms-2">Logout</button>
+        </div>
         <p style={{ color: 'red' }}>* This information is only visible to you and group owners and leader of groups you are apart of</p>
       </form>
-      
+
     </div>
   );
 }

@@ -1,0 +1,43 @@
+// src/custom.scss
+
+// Define your custom color
+$custom-color: #0a2a52;
+$app-theme-light: #113d72;
+
+// Import Bootstrap
+@import '~bootstrap/scss/bootstrap';
+
+// Add custom styles
+.app-Theme-bg {
+  background-color: $custom-color;
+}
+.app-theme-light-bg{
+    background-color: $app-theme-light;
+}
+
+.custom-text {
+  color: $custom-color;
+}
+.navbar-custom{
+    position: relative;
+  z-index: 1050;
+}
+// Your custom.scss or .css file
+// Your custom.scss or .css file
+.nav-drawer {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  
+    &.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0%);
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+  }
+#nav-link{
+    padding: 0;
+}  
+  

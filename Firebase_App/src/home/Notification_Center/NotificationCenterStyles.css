@@ -1,0 +1,65 @@
+/* Add these rules to your NotificationDropdown.css */
+.notification-title {
+    font-weight: bold;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 100%;
+  }
+  
+  .notification-body {
+  font-size: 14px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 80%;
+}
+  .notification-content {
+    width: calc(100% - 60px);
+  }
+  .notification-dropdown {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .notification-center {
+    position: absolute;
+    width: 300px;
+    max-height: 200px;
+    overflow-y: scroll;
+    background-color: #0a2a52c2;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+  }
+  
+  .notification-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    max-height: 82px; /* Adjust the max-height to accommodate the three lines */
+  }
+  
+  .notification-item:last-child {
+    border-bottom: none;
+  }
+  .dismiss-btn {
+    background-color: transparent;
+    border: none;
+    color: #999;
+    font-size: 14px;
+    cursor: pointer;
+    margin-left: 8px;
+  }
+  .notification-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+  }
