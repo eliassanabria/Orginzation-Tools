@@ -11,25 +11,25 @@ For the startup application that will be used in CS 260, the sub-application wil
 
 ### Key Features with CS 260 requirements:
 YSA Tools will focus on:
-* Ward Directory
-* Online status / last seen
-* ~~Direct chat messages~~
-* Browser push notifications 
+- [X] Ward Directory
+- [X] Online status / last seen
+- [X] Browser push notifications 
 
 ### Key Features Long-Term (Post CS 260):
-* SMS Broadcasting Polls (Send text messages with response polls)
-* Text message and email address verification for account recovery
-* Birthday List Generation
-* Ward Notifications
-* Ward Calendars
-* Group Chats
-* Assignment Delegation for members with callings
+- [ ] SMS Broadcasting Polls (Send text messages with response polls)
+- [X] Text message and email address verification for account recovery
+- [ ] Birthday List Generation
+- [X] Ward Notifications
+- [ ] Ward Calendars
+- [ ] Group Chats
+- [ ] Direct chat messages
+- [ ] Assignment Delegation for members with callings
 
 * Ward Registrations / Subscription Based Access
-  * Free Plan
-  * Basic Plan
-  * Premium Plan
-* Account Migration to other YSA Wards
+  - [X] Free Plan
+  - [ ] Basic Plan
+  - [X] Premium Plan
+* Account Migration to other Organization on Platform
 * Account Management to other Organization Tools Applications like business organizations and school planners.
 
 ##### Disclaimer:
@@ -39,7 +39,7 @@ Applications that are used by church organizations is not supported nor endorsed
 #### Server Info:
 IP address: 3.12.0.248
 
-URL: https://organizationtools.org
+URL: https://orgtools.app
 
 ## Goals:
 Have subdomains for different organizations that use the application. Potentially for businesses, have them integrate their own Single Sign-on for select applications.
