@@ -15,7 +15,7 @@ import { Socket } from './addons_React/socketCommunicator';
 //import './addons_React/pushNotifications';
 import InactivityDetector from './addons_React/InactivityDetector';
 import ConnectionStatus from './addons_React/ConnectionStatus';
-import './loaderContainer.css';
+
 import './App.css';
 import { initializePushNotifications } from './addons_React/PushNotificationServiceWorker'
 
@@ -209,7 +209,6 @@ function App() {
       </header>
       <main>
         <div id='AuthenticationLoginHolder'>{AuthRequested && <LoginPopupForm targetURL="/home" closePopup={closePopup} />}</div>
-
         <Routes>
           <Route
             path='/'

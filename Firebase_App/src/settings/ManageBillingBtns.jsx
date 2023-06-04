@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from 'react-bootstrap';
 
 function ManageBillingButton() {
   const handleManageBilling = async () => {
@@ -31,9 +32,9 @@ function ManageBillingButton() {
   };
 
   return (
-    <button type="button" onClick={handleManageBilling}>
+    <Button varinat='default' onClick={handleManageBilling}>
       Manage billing
-    </button>
+    </Button>
   );
 }
 

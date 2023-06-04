@@ -5,14 +5,20 @@ import '../AuthPopup.css';
 import { Spinner } from '../../addons_React/Spinners/Spinner';
 import { signInWithEmailAndPassword, signInWithGoogle, registerWithEmailAndPassword, signInWithApple} from './Firebase_Assets/authFunctions';
 import { auth } from './Firebase_Assets/firebaseConfig';
+import TermsModal from '../../Legal/TOSModal';
 export function LoginPopupForm(props) {
   const [displayLoader, setLoader] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const targetURL = props.targetURL;
   const closePopup = props.closePopup;
-
-
+  const [displayTOS, setTOSDisp] = useState(false);
+  const onClose = ()=>{
+    setTOSDisp(false);
+  }
+  const toggleTOS = ()=>{
+    setTOSDisp(true);
+  }
    const loginWithGoogle = async(event)=> {
     event.preventDefault();
     try {
@@ -138,8 +144,9 @@ export function LoginPopupForm(props) {
         <br />
         <br />
       </form> */}
-
+      <small>By using this app you agree to the <a href='#' onClick={toggleTOS}>Terms of Service</a></small>
       <button className="btn btn-light"onClick={closePopup}>Cancel</button>
+      <TermsModal onClose={onClose} isOpen={displayTOS}/>
     </div>
 
 

@@ -5,6 +5,7 @@ import './register.css';
 //import { Area } from 'react-easy-crop/types';
 import { uploadUserImage } from "../../addons_React/ProfileImageUploader";
 import { AuthState } from '../login/AuthState';
+import TermsModal from "../../Legal/TOSModal";
 export function ProfileSetup(props) {
   const logout = props.logout;
   const fileInputRef = useRef(null);
@@ -24,7 +25,8 @@ export function ProfileSetup(props) {
   const [gender, setGender] = useState('maleGender'); const [password, setPassword] = useState('')
   const [aliasError, setAliasError] = useState('');
   const [dobError, setDobError] = useState('');
-
+  const [TermsOfService, setTermsOfServiceAgreement] = useState(false);
+  const [DisplayTOS, setTOSDisplay] = useState(false);
 
   const [image, setImage] = useState("https://cdn-icons-png.flaticon.com/512/456/456212.png");
   const formatPhoneNumber = (input) => {
@@ -141,7 +143,9 @@ export function ProfileSetup(props) {
       return true;
     }
   };
-
+  const handleTOSToggle = () => {
+    setTOSDisplay(true);
+  }
   const handlePrefNameUpdateChange = (event) => {
     const input = event.target.value;
     setPreferredName(input);
@@ -188,13 +192,20 @@ export function ProfileSetup(props) {
     }
   }, [Authenticated]);
 
+const handleAgree = ()=>{
+  setTermsOfServiceAgreement(true);
+  setTOSDisplay(false);
 
+}
+const handleDisagree = ()=>{
+  setTermsOfServiceAgreement(false);
+  setTOSDisplay(false);
+}
 
   return (
     <div id="AuthenticationFormHolder">
       <form id="RegisterForm" onSubmit={registerNewUser}>
         <h3>Account Setup:</h3>
-
         {image && <img src={image} alt="Preview" className='ProfileImageRoundSubmit' />}
         <br />
         <input type="file" onChange={handleImageChange} required ref={fileInputRef} accept="image/png, image/jpeg" />
@@ -208,11 +219,11 @@ export function ProfileSetup(props) {
 
         />
         <label htmlFor="shareEmailOrg">Share with Orgs</label>
-        {aliasError && (<small className="text-danger">{aliasError}</small> )}
+        {aliasError && (<small className="text-danger">{aliasError}</small>)}
         <br />
         <label htmlFor="Alias">Alias:  </label>
         <input type='text' id='alias' name='userAlias' value={alias} pattern="[a-z._]*"
-          minlength="5" onChange={handleAliasUpdateChange} required />
+          minLength="5" onChange={handleAliasUpdateChange} required />
         <br />
         <label htmlFor="firstNameRegister">First Name: </label>
         <input
@@ -311,12 +322,14 @@ export function ProfileSetup(props) {
           onChange={(e) => setGender(e.target.value)}
         /><label style={{ color: 'red' }}>*</label>
         <br />
+      <input type="checkbox" required disabled={!TermsOfService} checked={TermsOfService} style={{ marginRight: '5px' }} onChange={(e)=>setTermsOfServiceAgreement(e.target.checked)}></input><a href="#" onClick={handleTOSToggle}>Terms of Service</a>
         <div className="mb-3">
-          <button type="submit" className="btn btn-primary">Save Public Profile</button>
+          <button type="submit" disabled={!TermsOfService} className="btn btn-primary">Save Public Profile</button>
           <button onClick={logout} className="btn btn-secondary ms-2">Logout</button>
         </div>
         <p style={{ color: 'red' }}>* This information is only visible to you and group owners and leader of groups you are apart of</p>
       </form>
+      <TermsModal isOpen={DisplayTOS} onAgree={handleAgree} onDisagree={handleDisagree}/>
 
     </div>
   );

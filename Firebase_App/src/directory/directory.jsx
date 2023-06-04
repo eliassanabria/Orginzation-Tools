@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useContext, useMemo } from 'react';
 import { useParams , NavLink} from 'react-router-dom'
 import { AuthState } from '../authentication/login/AuthState'
-import SocketContext from '../SocketContext';
 //import { Socket, UserStatusChangeEvent } from '../addons_React/socketCommunicator';
 import { Spinner } from '../addons_React/Spinners/Spinner';
 import '../authentication/AuthPopup.css';
@@ -12,7 +11,7 @@ export function Directory(props) {
   //const socket = useContext(SocketContext);
   const { Authenticated, socket } = props;
   const[displayLoader, setLoader] = useState(false);
-  const[ApprovalStatus, setApprovalStatus]= useState(null);
+  const[ApprovalStatus, setApprovalStatus]= useState(false);
 
   React.useEffect(() => {
     socket.addHandler(handleUserStatusChange);
@@ -47,6 +46,7 @@ export function Directory(props) {
         // Change the class of the element
         currentUserLoggedIn.className = event.status;
       }
+      
     });
   }
 
@@ -117,7 +117,7 @@ export function Directory(props) {
             setApprovalStatus(false);
             function BackBtn(){
               return(
-                <button type="button" class="btn btn-secondary" onClick={()=>window.history.back()}>Go back</button>
+                <button type="button" class="btn btn-secondary" onClick={()=>window.location.href = '/groups'}>Go to</button>
               )
             };
             setAction(BackBtn);
@@ -208,9 +208,18 @@ export function Directory(props) {
           Directory
           
         </div>
-        <b className='Regright'><NavLink className='nav-link' to={`/groups/${groupID}/settings`}>
-              <i className="fas fa-cog fa-lg" style={{ color: '#0a2a52' }}></i>
-            </NavLink></b>
+        <div style={{ display: "flex", alignItems: "center" }}>
+  <b style={{ display: "inline-block", marginRight: "10px" , marginLeft:'10px'}}>
+    <NavLink className='nav-link' to={`/groups/${groupID}/dashboard`}>
+      <i className="fas fa-chart-bar fa-lg" style={{ color: '#0a2a52' }}></i> Dashboard
+    </NavLink>
+  </b>
+  <b style={{ display: "inline-block" }}>
+    <NavLink className='nav-link' to={`/groups/${groupID}/settings`}>
+      <i className="fas fa-cog fa-lg" style={{ color: '#0a2a52' }}></i> Group Settings
+    </NavLink>
+  </b>
+</div>
         
         
       </section>

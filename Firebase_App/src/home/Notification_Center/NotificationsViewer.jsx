@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import './NotificationCenterStyles.css'
 import { Badge } from 'react-bootstrap';
 
-export const NotificationCenter = (props) => {
+export const NotificationCenterPopup = (props) => {
     const navigate = useNavigate();
     const authState = props.Authenticated;
     const mobileNavClose = props.mobileNavClose;
@@ -43,7 +43,7 @@ export const NotificationCenter = (props) => {
               setNotificationsList(data);
               // Set badge count using the Badging API
               if (navigator.setAppBadge) {
-                navigator.setAppBadge(data.notifications.length);
+                navigator.setAppBadge(notificationList.length);
               }
             } catch (error) {
               console.error('There was a problem fetching the notifications:', error);
@@ -101,11 +101,11 @@ export const NotificationCenter = (props) => {
 
     return (
         <div className="notification-dropdown">
-            <i className="fas fa-bell fa-lg" style={{ color: 'white', marginLeft: '30px' }} onClick={handleNotificationDropDownClick}>
+            <i className="fas fa-bell fa-lg" style={{ color: 'white' }} onClick={handleNotificationDropDownClick}>
                 {notificationList.length > 0 && (<Badge
                 style={{ backgroundColor: 'red', marginRight: '25px' }}>
                 {notificationList.length}
-              </Badge>)}</i>
+              </Badge>)}</i><a href='/notifications'>Notifications</a>
             {showNotificationCenter &&(
             <div className="notification-center">
                 {notificationList.map((notification) => (

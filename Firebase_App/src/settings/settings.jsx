@@ -22,8 +22,10 @@ export function Settings(props) {
   const [PrefName, setPrefName] = React.useState(localStorage.getItem('preferred_name') || 'Guest User');
   const [Alias, setAlias] = React.useState(localStorage.getItem('alias') || 'Visitor');
   const [userUID, setUserUID] = useState('');
+  const [isStripeCX, setCX] = useState(false);
   const fileInputRef = useRef(null);
   const [CroppedFile, setCropFile] = useState(null);
+  const [userPlan, setUserPlan] = useState('No Plan found...');
   const [image, setImage] = useState(localStorage.getItem('profile_image_url')||"https://cdn-icons-png.flaticon.com/512/456/456212.png");
   const fetchUserSettings = async () => {
     try {
@@ -45,7 +47,10 @@ export function Settings(props) {
       //setJoinDate(UserDocument.cre)
       setAlias(UserDocument.alias);
       setImage(UserDocument.profile_image_url);
+      setCX(UserDocument.isStripeCX);
+      setUserPlan(UserDocument.userPlan);
       setLoader(false);
+
 
     } catch (error) {
       console.error('Error fetching user settings:', error);
@@ -161,8 +166,8 @@ export function Settings(props) {
         <input type="date" className="form-control" id="UserDOBSetting" value={DOB} disabled />
       </div>
     </form>
-    <ManageBillingButton />
-    <StripePricingTable />
+    {isStripeCX && (<div><ManageBillingButton />  My Plan: {userPlan}</div>)}
+    {!isStripeCX && (<StripePricingTable />)}
     {/* <Elements stripe={stripePromise}>
       <SubscriptionForm uid={userUID} />
     </Elements> */}

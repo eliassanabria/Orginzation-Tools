@@ -29,7 +29,7 @@
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.3/umd/popper.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
-  
+
 
 </head>
 
@@ -58,7 +58,17 @@
           .catch((error) => {
             console.error("Service Worker registration failed: ", error);
           });
+        // navigator.serviceWorker
+        //   .register("/offline-cache-sw.js")
+        //   .then((registration) => {
+        //     console.log("Service Worker registered: ", registration);
+        //   })
+        //   .catch((error) => {
+        //     console.error("Service Worker registration failed: ", error);
+        //   });
       });
+
+
     }
   </script>
 </body>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, NavLink } from 'react-router-dom'
 import { AuthState } from "../authentication/login/AuthState";
 import { Card, Container, Row, Col, Button } from 'react-bootstrap';
 import Modal from "react-modal";
@@ -9,6 +9,7 @@ import { Spinner } from "../addons_React/Spinners/Spinner";
 
 import "react-tabs/style/react-tabs.css";
 import { Directory } from "../directory/directory";
+import RoleManagementScreen from "./SettingsTabs/Roles/RolesManagement";
 
 const GroupSettings = (props) => {
     Modal.setAppElement("#root");
@@ -36,13 +37,16 @@ const GroupSettings = (props) => {
 
     const authenticated = props.Authenticated;
     const socket = props.socket;
-    const [CanViewApprovalsScreen, setApprovalScreen] = useState(false);
+    const [rolesTabLabel, setRolesTabLabel] = useState('Roles');
 
+    const [CanViewApprovalsScreen, setApprovalScreen] = useState(false);
+    const [CanRemoveUsers, setCanRemoveUsers] = useState(false);
     const { groupID } = useParams();
     const [groupData, setGroupData] = useState({});
     const [usersNeedingApproval, setUsersNeedingApproval] = useState([]);
     const [subGroups, setSubGroups] = useState([]);
     const [roles, setRoles] = useState([]);
+    const [permissions, setPermissions] = useState();
     const [surveys, setSurveys] = useState([]);
     const [requiresApproval, setRequiresApproval] = useState(false);
     const [surveyRequired, setSurveyRequired] = useState(false);
@@ -67,7 +71,7 @@ const GroupSettings = (props) => {
         console.log(`UID: ${uid}`)
         const selectedUser = usersNeedingApproval.find(user => user.uid === uid);
         setSelectedUser(selectedUser);
-        const userVitalsDataURL = `/api/${groupID}/settings/approvals/viewrequest/${uid}`;
+        const userVitalsDataURL = `/api/groups/${groupID}/settings/approvals/viewrequest/${uid}`;
 
         try {
             const userVitalsResponse = await fetch(userVitalsDataURL, {
@@ -80,6 +84,14 @@ const GroupSettings = (props) => {
             setIsModalOpen(true);
         } catch (error) {
             console.error("Error fetching user vitals data:", error);
+        }
+    };
+
+    const updateRolesTabLabel = (groupType) => {
+        if (groupType === 'Business') {
+            setRolesTabLabel('Roles');
+        } else if (groupType === 'Religious') {
+            setRolesTabLabel('Callings');
         }
     };
 
@@ -122,11 +134,14 @@ const GroupSettings = (props) => {
                 window.location.href = '/home'
             }
             const groupData = await groupDataResponse.json();
+            updateRolesTabLabel(groupData.group_type);
+
             // console.log(`Permissions:`+JSON.stringify(groupData.permissions))
             const permisisons = JSON.parse(JSON.stringify(groupData.UserPermissions));
 
             console.log(permisisons.CanViewApprovalsScreen);
             setApprovalScreen(permisisons.CanViewApprovalsScreen);
+            setCanRemoveUsers(permisisons.CanRemoveUsers);
             setGroupData(groupData);
             // Set the initial values and the enabled/disabled state based on the API response
             setRequiresApproval(groupData.requiresApproval);
@@ -138,6 +153,7 @@ const GroupSettings = (props) => {
             setRolesTabVis(permisisons.CanViewRoles);
             setSubGroupVis(permisisons.CanViewSubGroups);
             setSurveysVis(permisisons.CanViewSurveys);
+            setPermissions(permisisons);
             const usersNeedingApprovalResponse = await fetch(usersNeedingApprovalURL, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -179,8 +195,6 @@ const GroupSettings = (props) => {
 
     return (
         <div id="TabsListCustom">
-
-
             <Tabs>
                 {displayLoader && <Spinner />}
 
@@ -188,11 +202,17 @@ const GroupSettings = (props) => {
                     <Tab>Settings</Tab>
                     {CanViewApprovalsScreen && (<Tab>Approvals</Tab>)}
                     {CanViewSubgroups && (<Tab>Subgroups</Tab>)}
-                    {CanViewRoles && (<Tab>Roles</Tab>)}
+                    {CanViewRoles && (<Tab>{rolesTabLabel}</Tab>)}
                     {CanViewSurveys && (<Tab>Surveys</Tab>)}
+                    {CanRemoveUsers && (<Tab>Manage Members</Tab>)}
                     {CanViewDirectory && (<Tab>
                         <Link className='blackLink' to={`/groups/${groupID}/directory`}>Directory</Link>
                     </Tab>)}
+                    <Tab><b style={{ display: "inline-block", marginRight: "10px", marginLeft: '10px' }}>
+                        <NavLink className='nav-link' to={`/groups/${groupID}/dashboard`}>
+                            <i className="fas fa-chart-bar fa-lg" style={{ color: '#0a2a52' }}></i> Dashboard
+                        </NavLink>
+                    </b></Tab>
                 </TabList>
 
                 <TabPanel>
@@ -230,102 +250,100 @@ const GroupSettings = (props) => {
                     {/* Implement the dropdown for survey selection here */}
                 </TabPanel>
 
-                {CanViewApprovalsScreen && (<TabPanel>
-                    <Modal
-                        isOpen={isModalOpen}
-                        onRequestClose={handleModalClose}
-                        contentLabel="User Vitals Data">
-                        {selectedUser && (
-                            <>
-                                <h2>{selectedUser.name} wants to join</h2>
-                                {userVitals ? (
-                                    <ul>
-                                        {Object.entries(userVitals).map(([key, value]) => (
-                                            <li key={key}>{`${key}: ${value}`}</li>
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    <p>Loading user vitals data...</p>
-                                )}
+                {CanViewApprovalsScreen && (
+                    <TabPanel>
+                        <Modal
+                            isOpen={isModalOpen}
+                            onRequestClose={handleModalClose}
+                            contentLabel="User Vitals Data">
+                            {selectedUser && (
+                                <>
+                                    <h2>{selectedUser.name} wants to join</h2>
+                                    {userVitals ? (
+                                        <ul>
+                                            {Object.entries(userVitals).map(([key, value]) => (
+                                                <li key={key}>{`${key}: ${value}`}</li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p>Loading user vitals data...</p>
+                                    )}
 
-                                <Button variant="success" disabled={!CanApproveJoinRequests} onClick={() => handleApprove(selectedUser.uid)}>Approve</Button>
-                                <Button variant="danger" onClick={handleModalClose}>Close</Button>
-                            </>
-                        )}
-                    </Modal>
+                                    <Button variant="success" disabled={!CanApproveJoinRequests} onClick={() => handleApprove(selectedUser.uid)}>Approve</Button>
+                                    <Button variant="danger" onClick={handleModalClose}>Close</Button>
+                                </>
+                            )}
+                        </Modal>
 
-                    <h3>Users Needing Approval</h3>
+                        <h3>Users Needing Approval</h3>
 
-                    <Container>
-                        <Row>
+                        <div className="grid-container">
 
                             {usersNeedingApproval.length > 0 ? (
                                 usersNeedingApproval.map(user => (
 
-                                    <Col key={user.uid} md={4}>
-
-                                        <div className="customCard">
-                                            {/* <Button
-                                            variant="primary"
-                                            onClick={() => handleUserCardClick('WEE')}
-                                        // onClick={()=>{alert("WEEEs")}}
-                                        >
-                                            View Details
-                                        </Button> */}
-                                            <Card.Body>
-                                                <Card.Title>{user.name}</Card.Title>
-                                                <Card.Img variant="top" src={user.profile_image_url} className="rounded-circle mx-auto d-block" style={{ width: '150px', height: '150px' }} />
-                                                <Button
-                                                    variant="primary"
-                                                    onClick={() => handleUserCardClick(user.uid)}
-                                                >
-                                                    View Details
-                                                </Button>
-                                            </Card.Body>
-                                        </div>
-                                    </Col>
+                                    <div key={user.uid} className="customCard">
+                                        <Card.Body>
+                                            <Card.Title>{user.name}</Card.Title>
+                                            <Card.Img variant="top" src={user.profile_image_url} className="rounded-circle mx-auto d-block" style={{ width: '150px', height: '150px' }} />
+                                            <Button
+                                                variant="primary"
+                                                onClick={() => handleUserCardClick(user.uid)}
+                                            >
+                                                View Details
+                                            </Button>
+                                        </Card.Body>
+                                    </div>
                                 ))
                             ) : (
                                 <p>No users needing approval</p>
                             )}
-                        </Row>
-                    </Container>
+                        </div>
 
 
+
+                    </TabPanel>)
+                }
+
+                {
+                    CanViewSubgroups && (<TabPanel>
+                        <h2>Subgroups</h2>
+                        <ul>
+                            {subGroups.map(subGroup => (
+                                <li key={subGroup.id}>{subGroup.name}</li>
+                            ))}
+                        </ul>
+                    </TabPanel>)
+                }
+
+                {
+                    CanViewRoles && (<TabPanel>
+                        <h2>{rolesTabLabel}:</h2>
+                        <RoleManagementScreen Authenticated={authenticated} roleLabel={rolesTabLabel} CanViewRoles={CanViewRoles} CanEditRoles={permissions.CanEditRoles} CanCreateRoles={permissions.CanCreateRoles} CanDeleteRoles={permissions.CanDeleteRoles} groupID={groupID}/>
+                    </TabPanel>)
+                }
+
+                {
+                    CanViewSurveys && (<TabPanel>
+                        <h2>Surveys</h2>
+                        <ul>
+                            {surveys.map(survey => (
+                                <li key={survey.id}>{survey.title}</li>
+                            ))}
+                        </ul>
+                    </TabPanel>)
+                }
+                {CanRemoveUsers && (<TabPanel>
+                    <h2>Manage Users:</h2>
 
                 </TabPanel>)}
-
-                {CanViewSubgroups && (<TabPanel>
-                    <h2>Subgroups</h2>
-                    <ul>
-                        {subGroups.map(subGroup => (
-                            <li key={subGroup.id}>{subGroup.name}</li>
-                        ))}
-                    </ul>
-                </TabPanel>)}
-
-                {CanViewRoles && (<TabPanel>
-                    <h2>Roles</h2>
-                    <ul>
-                        {roles.map(role => (
-                            <li key={role.id}>{role.name}</li>
-                        ))}
-                    </ul>
-                </TabPanel>)}
-
-                {CanViewSurveys && (<TabPanel>
-                    <h2>Surveys</h2>
-                    <ul>
-                        {surveys.map(survey => (
-                            <li key={survey.id}>{survey.title}</li>
-                        ))}
-                    </ul>
-                </TabPanel>)}
-                {CanViewDirectory && (<TabPanel>
-                    <Directory />
-                </TabPanel>)}
-            </Tabs>
-        </div>
+                {
+                    CanViewDirectory && (<TabPanel>
+                        <Directory />
+                    </TabPanel>)
+                }
+            </Tabs >
+        </div >
     );
 };
 

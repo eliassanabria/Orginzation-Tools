@@ -68,7 +68,7 @@ export function Home(props) {
   }, [Authenticated]);
 
 
-  
+
   if (!Organizations && Authenticated !== AuthState.Authenticated) {
     return (<div>
       <h1>Groups:</h1>
@@ -174,73 +174,74 @@ export function Home(props) {
 
   //fetch authorized user's associated groups given their username and put it into organizations object to then be added to the html page.
   return (<div>
-    < div style={{ zIndex: '0' }}>
+    <div>
+    {displayLoader && <Spinner />}
       {showGroupPreview && <JoinGroupPreview closePreview={closePreview} group_name={group_name} group_description={group_description} group_creation={group_creation} member_count={member_count} owner_name={owner_name} owner_contact={owner_contact} JoinGroup={JoinGroup} />}
       <h1>My Groups</h1>
       {Authenticated === AuthState.Authenticated && (<div className="col-md-4 mb-4">
-                <Card>
+        <Card>
+          <Card.Body>
+            <Card.Title>Join a Group</Card.Title>
+            <Button
+              className="btn btn-primary mb-2"
+              onClick={() => setShowJoinForm(!showJoinForm)}
+            >
+              <i className="fas fa-plus"></i>
+            </Button>
+            <CSSTransition
+              in={showJoinForm}
+              timeout={300}
+              classNames="fade"
+              unmountOnExit
+            >
+              <Form onSubmit={handleJoinRequest}>
+                <Form.Group controlId="joinCode">
+                  <Form.Label>Join Code:</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="join-code"
+                    placeholder="Enter Join Code"
+                    required
+                    value={JoinCode}
+                    onChange={(event) =>
+                      setJoinCode(event.target.value)
+                    }
+                  />
+                </Form.Group>
+                <Button type="submit" className="btn btn-primary">
+                  Join Now
+                </Button>
+              </Form>
+            </CSSTransition>
+          </Card.Body>
+        </Card>
+      </div>)}
+      <div className="row m-0 p-0">
+        {Authenticated === AuthState.Authenticated && Organizations && (
+          Organizations.map((org) => (
+            <div key={org.id} className="col-md-4 mb-4">
+              <Card >
+                <Card.Body>
+                  <Card.Title>{org.OrganizationName}</Card.Title>
+                  <Card.Text>{org.Description}</Card.Text>
+                  <ul className="list-group list-group-flush">
+                    <li className="list-group-item">Member Since: {org.MemberSince}</li>
+                    <li className="list-group-item">My Roles: {org.MyOrgRoles}</li>
+                    <li className="list-group-item">Status: {org.Status}</li>
+                  </ul>
                   <Card.Body>
-                    <Card.Title>Join a Group</Card.Title>
-                    <Button
-                      className="btn btn-primary mb-2"
-                      onClick={() => setShowJoinForm(!showJoinForm)}
-                    >
-                      <i className="fas fa-plus"></i>
-                    </Button>
-                    <CSSTransition
-                      in={showJoinForm}
-                      timeout={300}
-                      classNames="fade"
-                      unmountOnExit
-                    >
-                      <Form onSubmit={handleJoinRequest}>
-                        <Form.Group controlId="joinCode">
-                          <Form.Label>Join Code:</Form.Label>
-                          <Form.Control
-                            type="text"
-                            name="join-code"
-                            placeholder="Enter Join Code"
-                            required
-                            value={JoinCode}
-                            onChange={(event) =>
-                              setJoinCode(event.target.value)
-                            }
-                          />
-                        </Form.Group>
-                        <Button type="submit" className="btn btn-primary">
-                          Join Now
-                        </Button>
-                      </Form>
-                    </CSSTransition>
+                    <Link to={`/groups/${org.id}/dashboard`} className="btn btn-primary">
+                      View Dashboard
+                    </Link>
                   </Card.Body>
-                </Card>
-              </div>)}
-      <div className="row" style={{ zIndex: -1 }}>
-      {Authenticated === AuthState.Authenticated && Organizations && (
-        Organizations.map((org) => (
-          <div key={org.id} className="col-md-4 mb-4">
-            <Card >
-              <Card.Body>
-                <Card.Title>{org.OrganizationName}</Card.Title>
-                <Card.Text>{org.Description}</Card.Text>
-                <ul className="list-group list-group-flush">
-                  <li className="list-group-item">Member Since: {org.MemberSince}</li>
-                  <li className="list-group-item">My Roles: {org.MyOrgRoles}</li>
-                  <li className="list-group-item">Status: {org.Status}</li>
-                  {/* <li className="list-group-item">Actions: {org.Actions}</li> */}
-                </ul>
-                <div className="card-body">
-                  <Link to={`/groups/${org.id}/dashboard`} className="btn btn-primary">
-                    View Dashboard
-                  </Link>
-                </div>
-              </Card.Body>
-            </Card>
-          </div>
-        ))
-      )}
+                </Card.Body>
+              </Card>
+            </div>
+          ))
+        )}
+        
+      </div>
     </div>
-    </div>
-    {displayLoader && <Spinner />}
+
   </div>);
 }

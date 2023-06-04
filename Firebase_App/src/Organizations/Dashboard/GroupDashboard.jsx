@@ -12,6 +12,7 @@ import MyAssignments from './MyAssignments';
 import { AuthState } from '../../authentication/login/AuthState';
 import Popup from '../../addons_React/Popups/popup';
 import BroadcastMessage from '../BroadcastMessages';
+import { Spinner } from '../../addons_React/Spinners/Spinner';
 const GroupDashboard = (props) => {
   const [profile_image_url, setProfileURL] = useState(localStorage.getItem('profile_image_url') || 'https://cdn-icons-png.flaticon.com/512/456/456212.png');
   const authState = props.Authenticated;
@@ -24,6 +25,10 @@ const GroupDashboard = (props) => {
   const [CanSendPushToOrganizations, setPushPermission] = useState(false);
   const [perf_name, setPrefName] = useState('User Name');
   const [roles, setUserRolesDisp] = useState('User Roles');
+  const [displayLoader, setLoader] = useState(false);
+  const [ApprovalStatus, setApprovalStatus] = useState(false);
+  const [Message, setMessage] = useState('Loading...');
+  const [Action, setAction] = useState(null);
   //Get the user's enrollment, info, and permissions list for the dashboard to render properly based on roles.
   //Get enrollment status to then prevent other components from loading until the user is fully enrolled.
   //If the user is not approved yet, disable all buttons except leave group, re-label button to cancel join request, and hide the other buttons in the group.
@@ -92,6 +97,21 @@ const GroupDashboard = (props) => {
         }
       })
         .then(response => {
+          if (response.status === 202) {
+            response.json().then((responseBody) => {
+              const message = responseBody.msg;
+              console.warn(message);
+              setMessage(message);
+              setLoader(true);
+              setApprovalStatus(false);
+              function BackBtn() {
+                return (
+                  <button type="button" class="btn btn-secondary" onClick={() => window.location.href = `/groups`}>Back to Groups</button>
+                )
+              };
+              setAction(BackBtn);
+            })
+          }
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
@@ -108,7 +128,24 @@ const GroupDashboard = (props) => {
           console.error('There was a problem with the fetch operation:', error);
         });
     }
-  }, [authState]);
+  }, [authState, ApprovalStatus]);
+
+  React.useEffect(() => {
+    socket.addHandler(handleApproval);
+    return () => {
+      socket.removeHandler(handleApproval);
+    }
+  });
+  function handleApproval(event) {
+    if (event.success === true) {
+      setMessage('Approval Recieved!');
+      setApprovalStatus(true);
+      setAction(null);
+      //alert('Approval Recieved!');
+      setLoader(false);
+
+    }
+  }
   const toggleBroadcasts = () => {
     setBroadcastPopup(true)
   }
@@ -120,6 +157,8 @@ const GroupDashboard = (props) => {
   }
   return (
     <Container fluid>
+      {displayLoader && <Spinner action={Action} message={Message} />}
+
       {displayBroadcastPopup && (<Popup component={<BroadcastMessage authState={authState} close={closeBroadcasts} socket={socket} groupID={groupID} />} />)}
       <Row className="mb-4">
         <Col>
@@ -137,38 +176,35 @@ const GroupDashboard = (props) => {
           </p>
         </Col>
         <Col md={6} lg={4} className="text-right">
-        <ButtonGroup className="button-group">
-  <NavLink className='nav-link' to={`/groups/${groupID}/directory`}>
-    <Button variant='primary' className='rounded-btn' style={{ marginRight: '20px' }}>
-      Directory <i className="fa fa-address-book-o" style={{ fontSize: "22px" }}></i>
-    </Button>
-  </NavLink>
-  <NavLink className='nav-link' to={`/groups/${groupID}/settings`}>
-    <Button variant="secondary" className='rounded-btn' style={{ marginRight: '20px' }}>
-      <i className="fas fa-cog fa-lg" style={{ color: 'white' }}></i>
-    </Button>
-  </NavLink>
-  {CanSendPushToOrganizations && (
-    <Button variant="info" onClick={toggleBroadcasts} className='rounded-btn' style={{ marginRight: '20px' }}>
-      <Megaphone />
-    </Button>
-  )}
-  <Button variant="danger" disabled className='rounded-btn'>Leave Group</Button>
-</ButtonGroup>
+          <ButtonGroup className="button-group">
+            <NavLink className='nav-link' to={`/groups/${groupID}/directory`}>
+              <Button variant='primary' className='rounded-btn' style={{ marginRight: '20px' }}>
+                Directory <i className="fa fa-address-book-o" style={{ fontSize: "22px" }}></i>
+              </Button>
+            </NavLink>
+            <NavLink className='nav-link' to={`/groups/${groupID}/settings`}>
+              <Button variant="secondary" className='rounded-btn' style={{ marginRight: '20px' }}>
+                <i className="fas fa-cog fa-lg" style={{ color: 'white' }}></i>
+              </Button>
+            </NavLink>
+            <NavLink className='nav-link'>
+              {CanSendPushToOrganizations && (
+                <Button variant="info" onClick={toggleBroadcasts} className='rounded-btn' style={{ marginRight: '20px' }}>
+                  <Megaphone />
+                </Button>
+              )}
+            </NavLink>
+            <NavLink className='nav-link'>
+              <Button variant="danger" disabled className='rounded-btn'>Leave Group</Button>
+            </NavLink>
 
-
+          </ButtonGroup>
         </Col>
       </Row>
       <Row>
+
         <Col xs={12} md={6} lg={4}>
-          <Card className="mb-4">
-            <Card.Header>Feed</Card.Header>
-            <Card.Body>
-              <Feed />
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col xs={12} md={6} lg={4}>
+
           <Card className="mb-4">
             <Card.Header>Organization Announcements</Card.Header>
             <Card.Body>
@@ -179,6 +215,14 @@ const GroupDashboard = (props) => {
             <Card.Header>My Assignments</Card.Header>
             <Card.Body>
               <MyAssignments />
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col xs={12} md={6} lg={4}>
+          <Card className="mb-4">
+            <Card.Header>Feed</Card.Header>
+            <Card.Body>
+              <Feed />
             </Card.Body>
           </Card>
         </Col>

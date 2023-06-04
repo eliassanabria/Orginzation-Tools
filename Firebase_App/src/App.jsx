@@ -26,10 +26,16 @@ import "./SideDrawer.js"
 import { Container, Navbar, Nav, Button } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './custom.scss'; // Import the custom SCSS file
-import { NotificationCenter } from './home/Notification_Center/NotificationsViewer';
+import { NotificationCenterPopup } from './home/Notification_Center/NotificationsViewer';
 import GroupDashboard from "./Organizations/Dashboard/GroupDashboard"
 import { ToastContainer } from 'react-bootstrap';
 import { AlignCenter } from 'react-bootstrap-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCalendarCheck, faEnvelope, faBuilding , faClipboardList, faBellSlash } from '@fortawesome/free-solid-svg-icons';
+import TermsOfService from './Legal/TermsOfService';
+import TermsModal from './Legal/TOSModal';
+import { NotificationCenter } from './AppScreens/Notifications/NotificationCenter';
+import ChatPage from './AppScreens/DirectMessages/DirectMessages';
 
 function App() {
   //Check for Mobile for prompt:
@@ -75,9 +81,32 @@ function App() {
 
 
   function handleAnnouncement(event) {
-    console.log(event.type);
+    //console.log(event.type);
     if (event.type === 'AnnouncementNotification') {
       addToast(event.title, event.groupName, event.body);
+    }
+    if (event.type === 'StatusChange') {
+      //console.log(event.status);
+      const status = event.status;
+      if (event.userID === window.localStorage.getItem('id')) {
+        //we are current user or self, update other online clients.
+        if (status === 'overlayUserStatusOnline') {
+
+          localStorage.setItem('last_displayed_status', 'Online'); setUserStatus('Online');
+        }
+        if (status === 'overlayUserStatusAway') {
+
+          localStorage.setItem('last_displayed_status', 'Away'); setUserStatus('Away');
+        }
+        if (status === 'overlayUserStatusDND') {
+
+          localStorage.setItem('last_displayed_status', 'Do Not Disturb'); setUserStatus('Do Not Disturb');
+        }
+        if (status === 'overlayUserStatusOffline') {
+
+          localStorage.setItem('last_displayed_status', 'Appear Offline'); setUserStatus('Appear Offline');
+        }
+      }
     }
     //alert(event.title);
   }
@@ -147,6 +176,7 @@ function App() {
     console.log('Window has been inactive for more than 2 minutes.');
     if (userStatus === 'Online') {
       setUserStatus('Away');
+      Socket.sendStatus(localStorage.getItem('id'), 'Away')
     }
 
   };
@@ -155,10 +185,12 @@ function App() {
     setUserStatus(localStorage.getItem('last_displayed_status'));
   };
   const handleStatusChange = (event) => {
+    console.log('Status Change Recieved:')
     const newStatus = event.target.value;
+    console.log('Status is now:', newStatus)
     setUserStatus(newStatus);
     localStorage.setItem('last_displayed_status', newStatus);
-    socket.sendStatus(userID, newStatus);
+    Socket.sendStatus(userID, newStatus);
   };
   //TODO: Authentication verification:
   // Asynchronously determine if the user is authenticated by calling the service
@@ -196,11 +228,11 @@ function App() {
           setAuthState(state);
           setID(response?.id);
           localStorage.setItem('id', response.id);
-          //Socket Connections will go here for only authenticated users.
-          if (!socket) {
-            Socket.connect();
-            setSocket(Socket);
-          }
+          // //Socket Connections will go here for only authenticated users.
+          // if (!socket) {
+          //   Socket.connect();
+          //   setSocket(Socket);
+          // }
           setProfilePresence(true);
         });
     } else {
@@ -287,6 +319,7 @@ function App() {
 
   const Login = () => {
     requestAuthPage(true);
+    setDrawerOpen(false);
   }
   const closePopup = () => {
     requestAuthPage(false);
@@ -331,7 +364,7 @@ function App() {
     <div className="App">
 
       <InactivityDetector onInactivity={handleInactivity} onActivityResumed={handleActivityResumed} />
-      <header className="App-header">
+      <header className="App-header" style={{ position: 'sticky' }}>
         <nav>
           <div className="user-account-menu" style={{ padding: `5px` }} >
             {authState === AuthState.Authenticated && (<img src={profile_image_url} alt="Profile Picture" className="profile-picture" id='profileImage' />)}
@@ -352,10 +385,10 @@ function App() {
               <i className="fas fa-bell-slash fa-lg" id="desktopNav" style={{ color: 'white', marginLeft: '30px' }} onClick={promptNotificationPermission}></i>
             </div>)}
             {authState === AuthState.Authenticated && notificationEnabled && (<div>
-              <NotificationCenter authenticated={authState} />
+              <NotificationCenterPopup authenticated={authState} />
             </div>)}
           </div>
-          <img src='/company_logo.jpg' alt='Company Logo' style={{height:'60px', width:'60px', borderRadius:'50%'}}/>
+          <img src='/company_logo.jpg' alt='Company Logo' id="desktopNav" style={{ height: '60px', width: '60px', borderRadius: '20%', marginRight: '20px' }} />
 
           {authState === AuthState.Authenticated && profilePresent && (
             <NavLink className='nav-link' id="desktopNav" to="groups">My Groups</NavLink>)}
@@ -364,15 +397,18 @@ function App() {
             <NavLink onClick={logout} id="desktopNav">Logout</NavLink>)}
           {authState !== AuthState.Authenticated && (<NavLink id="desktopNav" onClick={Login}>Login / Register</NavLink>)}
 
-          <div className="dropdown ">
+          <div className="dropdown">
             <nav className="navbar navbar-dark app-Theme-bg">
-              <button className="navbar-toggler" type="button">
+              <button className="navbar-toggler" type="button" style={{marginLeft:'10px'}}>
+                
                 <span
                   className="navbar-toggler-icon"
+                  
                   onMouseOver={toggleDrawerOpen}
                   onTouchEnd={toggleDrawerClose}
                 ></span>
               </button>
+              <h2>Org Tools</h2>
             </nav>
 
             <div
@@ -399,7 +435,8 @@ function App() {
 
                 <div style={{ display: 'flex' }}>
                   <div style={{ fontSize: 'x-large' }}>
-                    <b>Org Tools</b>
+                  
+                  <b style={{display:'flex'}}><img src='/company_logo.jpg' alt='Company Logo' style={{ height: '70px', width: '90px', borderRadius:'15%', marginRight: '5px' }} />Org Tools</b>
                   </div>
                   <div style={{ fontSize: 'large', paddingLeft: '3rem' }}>
                     {authState === AuthState.Authenticated && (
@@ -428,8 +465,7 @@ function App() {
                         </a>)}
                     </div>
                   </div>
-
-
+                  <br></br>
                   {authState === AuthState.Authenticated && profilePresent && (
                     <select id="status-dropdown" onChange={handleStatusChange} name="status" value={userStatus}>
                       <option value="Online" className="status-item online">Online</option>
@@ -442,25 +478,36 @@ function App() {
                 </div>
 
                 {authState === AuthState.Authenticated && profilePresent && (
-                  <a href='/groups' style={{ display: location.pathname === '/home' ? 'none' : 'flex' }}>My Groups</a>)}
+                  <a href='/groups' style={{ display: location.pathname === '/groups' ? 'none' : 'flex' }}><FontAwesomeIcon icon={faBuilding} style={{marginRight:'10px'}} />My Groups</a>)}
 
                 {authState !== AuthState.Authenticated && (<NavLink onClick={Login}>Login / Register</NavLink>)}
                 {authState === AuthState.Authenticated && !notificationEnabled && (<div>
-                  <i className="fas fa-bell-slash fa-lg" style={{ color: 'white', marginLeft: '30px' }} onClick={promptNotificationPermission}></i>
+                  <FontAwesomeIcon icon={faBellSlash} onClick={promptNotificationPermission}/><a href='/notifications'>Notifications</a>
                 </div>)}
                 {authState === AuthState.Authenticated && notificationEnabled && (<div>
-                  <NotificationCenter authenticated={authState} mobileNavClose={toggleDrawerClose}/>
+                  
+                  <NotificationCenterPopup authenticated={authState} mobileNavClose={toggleDrawerClose} />
                 </div>)}
+                {/* {authState === AuthState.Authenticated && profilePresent && (<div>
+                  <br></br>
+                  <a href='/chats' disabled><FontAwesomeIcon icon={faEnvelope} style={{marginRight:'10px'}} />Direct Messages</a>
+                </div>)}
+                {authState === AuthState.Authenticated && profilePresent && (<div>
+                  <br></br>
+                  <a href='/appointments' disabled><FontAwesomeIcon icon={faCalendarCheck} style={{marginRight:'10px'}} />My Appointments</a>
+                </div>)}
+                {authState === AuthState.Authenticated && profilePresent && (<div>
+                  <br></br>
+                  <a href='/tasks'><FontAwesomeIcon icon={faClipboardList} style={{marginRight:'10px'}} />My Tasks</a>
+                </div>)} */}
+                <div style={{ bottom: 0 }}><br></br>
+                  <Button className='app-Theme-bg' onClick={toggleDrawerClose} >Close Menu</Button>
+                </div>
 
 
-            <div style={{ bottom: 0 }}><br></br>
-              <Button className='app-Theme-bg' onClick={toggleDrawerClose} >Close Menu</Button>
+              </Nav>
             </div>
-
-
-          </Nav>
-        </div>
-    </div>
+          </div>
 
           {/* <div className="dropdown">
             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Hamburger_icon_white.svg/1024px-Hamburger_icon_white.svg.png" width="20px" alt="Menu_icon" />
@@ -489,13 +536,13 @@ function App() {
               {authState !== AuthState.Authenticated && (<NavLink onClick={Login}>Login / Register</NavLink>)}
             </div>
           </div> */}
-  { loadProfileImage }
+          {loadProfileImage}
         </nav >
 
       </header >
 
 
-      <main className={`main-content${!drawerOpen ? ' open' : ''}`} style={{zIndex:'0'}}>
+      <main style={{ zIndex: '0', position: 'relative' }}>
         <div id='AuthenticationLoginHolder'>{AuthRequested && <LoginPopupForm targetURL={location.pathname} closePopup={closePopup} />}</div>
         {!profilePresent && authState === AuthState.Authenticated && (<Popup targetURL={location.pathname} component={<ProfileSetup Authenticated={authState} email={EmailAddress} logout={logout} />} />)}
         <ToastContainer position="top-end" style={{ zIndex: '7' }} className="p-3">
@@ -534,9 +581,38 @@ function App() {
           <Route path='/register' element={<ProfileSetup Authenticated={authState} />} />
           <Route path='groups/:groupID/surveys/:surveyID' element={<SurveyCollection Authenticated={authState} />} />
           <Route path='/organizations/requests/join/:joincode' element={<JoinDeepLink Authenticated={authState} />} />
+          <Route path='/terms-of-service' element={<TermsModal isOpen={true}/>}/>
+          <Route path='/notifications' element={<NotificationCenter Authenticated={authState}/>}/>
+          <Route path='/chats' element={<ChatPage Authenticated={authState}/>}/>
           <Route path='*' element={<NotFound />} />
         </Routes>
       </main>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
+      <br></br>
       <Footer authenticated={authState} />
 
     </div >
@@ -550,13 +626,10 @@ function Footer(props) {
       <table className='FooterTable'>
         <tbody>
           <tr className='FooterRow'>
-            <td className='left'>Elias Sanabria
-              <button type="button" className="btn btn-link" onClick={() => window.location.href = 'https://github.com/eliassanabria/Orginzation-Tools'}>Source</button>
-
+            <td className='left'>
+             <small>Org Tools & Solutions Inc. 2023© All Right Reserved</small>
             </td>
-            <td className='center'>
-              <img src='/company_logo.jpg' alt='Company Logo' style={{height:'50px', width:'50px', borderRadius:'50%'}}/>
-            </td>
+            
             <td className='right'>
               {authenticated === AuthState.Authenticated && (<ConnectionStatus WebSocket={Socket} />)}
             </td>
