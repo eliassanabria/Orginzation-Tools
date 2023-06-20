@@ -2,50 +2,24 @@ import React, { useState, useEffect } from "react";
 import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
 import { useParams, Link, NavLink } from 'react-router-dom'
 import { AuthState } from "../authentication/login/AuthState";
-import { Card, Container, Row, Col, Button } from 'react-bootstrap';
-import Modal from "react-modal";
+import { Card } from 'react-bootstrap';
 import "./GroupSettings.css";
 import { Spinner } from "../addons_React/Spinners/Spinner";
 
 import "react-tabs/style/react-tabs.css";
 import { Directory } from "../directory/directory";
 import RoleManagementScreen from "./SettingsTabs/Roles/RolesManagement";
+import ApprovalsTab from "./SettingsTabs/ApprovalsScreen/ApprovalsTab";
 
 const GroupSettings = (props) => {
-    Modal.setAppElement("#root");
-
-    const usersNeedingApprovalDummyData = [
-        {
-            uid: "user1",
-            name: "John Doe",
-            email: "john.doe@example.com",
-            registrationDate: "2023-04-01",
-        },
-        {
-            uid: "user2",
-            name: "Jane Smith",
-            email: "jane.smith@example.com",
-            registrationDate: "2023-04-05",
-        },
-        {
-            uid: "user3",
-            name: "Bob Johnson",
-            email: "bob.johnson@example.com",
-            registrationDate: "2023-04-10",
-        },
-    ];
-
     const authenticated = props.Authenticated;
     const socket = props.socket;
     const [rolesTabLabel, setRolesTabLabel] = useState('Roles');
-
     const [CanViewApprovalsScreen, setApprovalScreen] = useState(false);
     const [CanRemoveUsers, setCanRemoveUsers] = useState(false);
     const { groupID } = useParams();
     const [groupData, setGroupData] = useState({});
-    const [usersNeedingApproval, setUsersNeedingApproval] = useState([]);
     const [subGroups, setSubGroups] = useState([]);
-    const [roles, setRoles] = useState([]);
     const [permissions, setPermissions] = useState();
     const [surveys, setSurveys] = useState([]);
     const [requiresApproval, setRequiresApproval] = useState(false);
@@ -67,59 +41,21 @@ const GroupSettings = (props) => {
             //window.location.href=`/home`
         }
     }, [authenticated, socket]);
-    const handleUserCardClick = async (uid) => {
-        console.log(`UID: ${uid}`)
-        const selectedUser = usersNeedingApproval.find(user => user.uid === uid);
-        setSelectedUser(selectedUser);
-        const userVitalsDataURL = `/api/groups/${groupID}/settings/approvals/viewrequest/${uid}`;
 
-        try {
-            const userVitalsResponse = await fetch(userVitalsDataURL, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            const userVitalsData = await userVitalsResponse.json();
-            setUserVitals(userVitalsData);
-            setIsModalOpen(true);
-        } catch (error) {
-            console.error("Error fetching user vitals data:", error);
-        }
-    };
 
     const updateRolesTabLabel = (groupType) => {
         if (groupType === 'Business') {
-            setRolesTabLabel('Roles');
+            setRolesTabLabel('Role');
         } else if (groupType === 'Religious') {
-            setRolesTabLabel('Callings');
+            setRolesTabLabel('Calling');
         }
     };
-
-    const handleApprove = (uid) => {
-        //Send approval via socket:
-
-        console.log(`Approving user with UID: ${uid}`);
-        socket.sendApproval(groupID, uid)
-        setUsersNeedingApproval(prevUsers => {
-            return prevUsers.filter(user => user.uid !== uid);
-        });
-        setIsModalOpen(false);
-    };
-    const handleModalClose = () => {
-        setIsModalOpen(false);
-    };
-
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedUser, setSelectedUser] = useState(null);
-    const [userVitals, setUserVitals] = useState(null);
 
     const fetchData = async () => {
         setLoader(true);
         // Replace the URLs with the actual API endpoints.
         const groupDataURL = `/api/groups/${groupID}/settings/general`;
-        const usersNeedingApprovalURL = `/api/groups/${groupID}/settings/approvals/list`;
         const subGroupsURL = ``
-        const rolesURL = "https://api.example.com/roles";
         const surveysURL = "https://api.example.com/surveys";
 
         try {
@@ -128,10 +64,10 @@ const GroupSettings = (props) => {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
             });
-            if (groupDataResponse.status === 401) {
+            if (!groupDataResponse.ok) {
                 const data = await groupDataResponse.json()
                 alert(data.msg);
-                window.location.href = '/home'
+                window.location.href = '/groups'
             }
             const groupData = await groupDataResponse.json();
             updateRolesTabLabel(groupData.group_type);
@@ -154,23 +90,10 @@ const GroupSettings = (props) => {
             setSubGroupVis(permisisons.CanViewSubGroups);
             setSurveysVis(permisisons.CanViewSurveys);
             setPermissions(permisisons);
-            const usersNeedingApprovalResponse = await fetch(usersNeedingApprovalURL, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            const usersNeedingApproval = await usersNeedingApprovalResponse.json();
-            setUsersNeedingApproval(usersNeedingApproval.approvalListResult);
-
-
 
             const subGroupsResponse = await fetch(subGroupsURL);
             const subGroups = await subGroupsResponse.json();
             setSubGroups(subGroups);
-
-            const rolesResponse = await fetch(rolesURL);
-            const roles = await rolesResponse.json();
-            setRoles(roles);
 
             const surveysResponse = await fetch(surveysURL);
             const surveys = await surveysResponse.json();
@@ -197,12 +120,11 @@ const GroupSettings = (props) => {
         <div id="TabsListCustom">
             <Tabs>
                 {displayLoader && <Spinner />}
-
                 <TabList className='TabsListCustom'>
                     <Tab>Settings</Tab>
                     {CanViewApprovalsScreen && (<Tab>Approvals</Tab>)}
                     {CanViewSubgroups && (<Tab>Subgroups</Tab>)}
-                    {CanViewRoles && (<Tab>{rolesTabLabel}</Tab>)}
+                    {CanViewRoles && (<Tab>{rolesTabLabel}s</Tab>)}
                     {CanViewSurveys && (<Tab>Surveys</Tab>)}
                     {CanRemoveUsers && (<Tab>Manage Members</Tab>)}
                     {CanViewDirectory && (<Tab>
@@ -252,62 +174,15 @@ const GroupSettings = (props) => {
 
                 {CanViewApprovalsScreen && (
                     <TabPanel>
-                        <Modal
-                            isOpen={isModalOpen}
-                            onRequestClose={handleModalClose}
-                            contentLabel="User Vitals Data">
-                            {selectedUser && (
-                                <>
-                                    <h2>{selectedUser.name} wants to join</h2>
-                                    {userVitals ? (
-                                        <ul>
-                                            {Object.entries(userVitals).map(([key, value]) => (
-                                                <li key={key}>{`${key}: ${value}`}</li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <p>Loading user vitals data...</p>
-                                    )}
-
-                                    <Button variant="success" disabled={!CanApproveJoinRequests} onClick={() => handleApprove(selectedUser.uid)}>Approve</Button>
-                                    <Button variant="danger" onClick={handleModalClose}>Close</Button>
-                                </>
-                            )}
-                        </Modal>
-
-                        <h3>Users Needing Approval</h3>
-
-                        <div className="grid-container">
-
-                            {usersNeedingApproval.length > 0 ? (
-                                usersNeedingApproval.map(user => (
-
-                                    <div key={user.uid} className="customCard">
-                                        <Card.Body>
-                                            <Card.Title>{user.name}</Card.Title>
-                                            <Card.Img variant="top" src={user.profile_image_url} className="rounded-circle mx-auto d-block" style={{ width: '150px', height: '150px' }} />
-                                            <Button
-                                                variant="primary"
-                                                onClick={() => handleUserCardClick(user.uid)}
-                                            >
-                                                View Details
-                                            </Button>
-                                        </Card.Body>
-                                    </div>
-                                ))
-                            ) : (
-                                <p>No users needing approval</p>
-                            )}
-                        </div>
-
-
-
+                        <ApprovalsTab socket={socket} approver={CanApproveJoinRequests} />
                     </TabPanel>)
                 }
 
                 {
                     CanViewSubgroups && (<TabPanel>
                         <h2>Subgroups</h2>
+                        <div className="alert alert-danger" role='alert'>This feature is is the works, none of the buttons work at this time.</div>
+
                         <ul>
                             {subGroups.map(subGroup => (
                                 <li key={subGroup.id}>{subGroup.name}</li>
@@ -318,14 +193,15 @@ const GroupSettings = (props) => {
 
                 {
                     CanViewRoles && (<TabPanel>
-                        <h2>{rolesTabLabel}:</h2>
-                        <RoleManagementScreen Authenticated={authenticated} roleLabel={rolesTabLabel} CanViewRoles={CanViewRoles} CanEditRoles={permissions.CanEditRoles} CanCreateRoles={permissions.CanCreateRoles} CanDeleteRoles={permissions.CanDeleteRoles} groupID={groupID}/>
+                        <h2>{rolesTabLabel}s:</h2>
+                        <RoleManagementScreen Authenticated={authenticated} roleLabel={rolesTabLabel} CanViewRoles={CanViewRoles} CanEditRoles={permissions.CanEditRoles} CanCreateRoles={permissions.CanCreateRoles} CanDeleteRoles={permissions.CanDeleteRoles} groupID={groupID} />
                     </TabPanel>)
                 }
 
                 {
                     CanViewSurveys && (<TabPanel>
                         <h2>Surveys</h2>
+                        <div className="alert alert-danger" role='alert'>This feature is is the works.</div>
                         <ul>
                             {surveys.map(survey => (
                                 <li key={survey.id}>{survey.title}</li>
@@ -335,7 +211,7 @@ const GroupSettings = (props) => {
                 }
                 {CanRemoveUsers && (<TabPanel>
                     <h2>Manage Users:</h2>
-
+                    <div className="alert alert-danger" role='alert'>This feature is is the works.</div>
                 </TabPanel>)}
                 {
                     CanViewDirectory && (<TabPanel>
