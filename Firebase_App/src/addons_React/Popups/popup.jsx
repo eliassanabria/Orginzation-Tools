@@ -7,9 +7,6 @@ export function Popup(props) {
   //pass in the Close popup from the App.jsx
   const closePopup = props.closePopup;
 
-
-
-
   return (
     <div className="popup" id='authPopup'>
       

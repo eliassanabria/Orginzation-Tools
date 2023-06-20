@@ -42,6 +42,10 @@ const GroupDashboard = (props) => {
       })
         .then(response => {
           if (!response.ok) {
+            if(response.status === 404){
+              alert('Group was not found, check that you are enrolled in the group.');
+              window.location.href='/groups';
+            }
             throw new Error('Network response was not ok');
           }
           return response.json();

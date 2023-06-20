@@ -57,7 +57,7 @@ export const JoinDeepLink = (props) => {
             const body = await response.json();
             setLoader(false);
 
-            window.location.href = `/${body.groupID}/directory`;
+            window.location.href = `/groups/${body.groupID}/Dashboard`;
         }
 
     }
@@ -103,7 +103,7 @@ export const JoinDeepLink = (props) => {
             alert(`⚠ Error ${groupInfo.status}: ${body.msg}`);
             setLoader(false);
             if(groupInfo.status === 409){
-                window.location.href='/home';
+                window.location.href=`/groups/${body.groupID}/dashboard`;
             }
         }
     }
