@@ -36,6 +36,8 @@ import TermsOfService from './Legal/TermsOfService';
 import TermsModal from './Legal/TOSModal';
 import { NotificationCenter } from './AppScreens/Notifications/NotificationCenter';
 import ChatPage from './AppScreens/DirectMessages/DirectMessages';
+import RoleLists from './Organizations/SettingsTabs/Roles/RoleListComponents/MemberLists';
+import PricingPages from './AppScreens/Pricing Options/PricingPages';
 
 function App() {
   //Check for Mobile for prompt:
@@ -375,7 +377,7 @@ function App() {
                 <i className="fas fa-cog fa-lg" style={{ color: '#ffffff', marginRight: '25px', marginLeft: '50px' }}></i>
               </NavLink>)}
             {authState === AuthState.Authenticated && profilePresent && (
-              <select className="custom-select" id="status-dropdown" onChange={handleStatusChange} name="status" value={userStatus} style={{ width: `auto` }}>
+              <select className="custom-select" id="status-dropdown" onChange={handleStatusChange} name="status" value={userStatus} style={{ width: `auto`, marginRight:'15px'}}>
                 <option value="Online" className="status-item online">Online</option>
                 <option value="Away" className="status-item away">Away</option>
                 <option value="Do Not Disturb" className="status-item dnd">Do Not Disturb</option>
@@ -576,7 +578,7 @@ function App() {
           <Route path="/users/:userUUID/profile" element={<Profile Authenticated={authState} />} />
           <Route path='/groups/:groupID/settings' element={<GroupSettings Authenticated={authState} socket={Socket} />} />
           <Route path='/groups/:groupID/dashboard' element={<GroupDashboard Authenticated={authState} socket={Socket} />} />
-
+          <Route path='/groups/:groupID/settings/roles/:roleID/lists' element={<RoleLists Authenticated={authState}/>} />
           <Route path='/groups' element={<Home Authenticated={authState} />} />
           <Route path='/register' element={<ProfileSetup Authenticated={authState} />} />
           <Route path='groups/:groupID/surveys/:surveyID' element={<SurveyCollection Authenticated={authState} />} />
@@ -584,6 +586,8 @@ function App() {
           <Route path='/terms-of-service' element={<TermsModal isOpen={true}/>}/>
           <Route path='/notifications' element={<NotificationCenter Authenticated={authState}/>}/>
           <Route path='/chats' element={<ChatPage Authenticated={authState}/>}/>
+          <Route path='/pricing' element={<PricingPages Authenticated={authState}/>}/>
+
           <Route path='*' element={<NotFound />} />
         </Routes>
       </main>
@@ -621,14 +625,29 @@ function App() {
 }
 function Footer(props) {
   const authenticated = props.authenticated;
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 768); // Adjust the breakpoint as needed
+    };
+
+    handleResize(); // Check initially
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
   return (
     <footer>
       <table className='FooterTable'>
         <tbody>
           <tr className='FooterRow'>
             <td className='left'>
-             <small>Org Tools & Solutions Inc. 2023© All Right Reserved</small>
+             <small>Org Tools & Solutions Inc. 2023© All Rights Reserved</small>
             </td>
+            
             
             <td className='right'>
               {authenticated === AuthState.Authenticated && (<ConnectionStatus WebSocket={Socket} />)}
