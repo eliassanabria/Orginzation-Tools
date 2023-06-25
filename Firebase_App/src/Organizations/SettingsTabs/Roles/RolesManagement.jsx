@@ -3,18 +3,31 @@ import Modal from "react-modal";
 import { Button, Card, ButtonGroup } from "react-bootstrap";
 import { Map } from "immutable";
 import { Spinner } from "../../../addons_React/Spinners/Spinner";
+import { useNavigate } from 'react-router-dom';
+import Popup from "../../../addons_React/Popups/popup";
+import RoleForm from "./RoleCreationModal";
+
 
 const RoleManagementScreen = (props) => {
-    const { Authenticated, roleLabel, CanViewRoles, CanEditRoles, CanCreateRoles, CanDeleteRoles, groupID } = props;
+    const navigate = useNavigate();
+    const {roleLabel, CanViewRoles, CanEditRoles, CanCreateRoles, CanDeleteRoles, groupID } = props;
     const [OrgRoles, setOrgRoles] = useState([]);
     const [isModalOpen, setModalOpen] = useState(false);
     const [roleDetails, setRoleDetails] = useState({ role_title: '', role_permissions: Map() });
     const [roleID, setRoleID] = useState(null);
     const [showSaveButton, setShowSaveButton] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [displayCreatePopup, setPopupCreate] = useState(false);
+
     const itemsPerPage = 10;
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
+    }
+    const handleCloseCreate =(newGroupID)=>{
+        if(newGroupID){
+            //Call the modal preferences to setup the role permissions.
+        }
+        setPopupCreate(false);
     }
     useEffect(() => {
         async function fetchAllRolesOrg() {
@@ -86,8 +99,7 @@ const RoleManagementScreen = (props) => {
                     <Card.Body>
                         <Card.Title>{role.role_title} {role.is_base_role && <small><small><small><small>Base Membership Role</small></small></small></small>}</Card.Title>
                         <Button disabled={role.is_base_role} onClick={() => handleDetailsBtnClick(role.id)}>View Details</Button> <br /><br />
-                        {CanEditRoles && !role.is_base_role && <div><Button variant="primary" onClick={()=>{window.location.href=`/groups/${groupID}/settings/roles/${role.id}/lists`}}>Add / Remove Members</Button><br /><br /></div>}
-                        {CanViewRoles && !role.is_base_role && <Button variant="secondary">View Members</Button>}
+                        {CanViewRoles && !role.is_base_role && <div><Button variant="secondary" onClick={()=>{navigate(`/groups/${groupID}/settings/roles/${role.id}/lists`)}}>View Members</Button><br /><br /></div>}
                         {CanDeleteRoles && !role.is_base_role && CanEditRoles && <Button style={{ marginLeft: '25px' }} variant="danger">Delete Role</Button>}
                     </Card.Body>
                 </Card>
@@ -102,11 +114,11 @@ const RoleManagementScreen = (props) => {
 
     return (
         <div>
-            <div className="alert alert-danger" role='alert'>This feature is in the works, none of the buttons work at this time.</div>
-
+            {/* <div className="alert alert-danger" role='alert'>This feature is in the works, not all of the buttons work at this time.</div> */}
+            {displayCreatePopup && (<Popup component={<RoleForm roleLable={roleLabel} groupID={groupID} handleClose={handleCloseCreate}/>}/>)}
             <h4>{roleLabel} Management:</h4>
             <div>
-                {CanCreateRoles && (<div><Button>Add {roleLabel}</Button></div>)}
+                {CanCreateRoles && (<div><Button onClick={()=>{setPopupCreate(true)}}>Add {roleLabel}</Button></div>)}
                 <br />
             </div>
             <div className="row m-0 p-0" style={{ padding: '5px' }}>

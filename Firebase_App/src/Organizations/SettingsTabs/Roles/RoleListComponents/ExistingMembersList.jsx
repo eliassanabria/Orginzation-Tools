@@ -2,55 +2,28 @@ import React, { useState, useEffect } from "react";
 import { Card, Button, Table } from 'react-bootstrap';
 import { FiPhone } from 'react-icons/fi';
 import { RiDeleteBinLine, RiCheckLine } from 'react-icons/ri';
-import './Lists_Styles.css'
-import ProposeSearchBar from "./RoleProposeSearchUser";
-import Popup from "../../../../addons_React/Popups/popup";
 import axios from "axios";
 
-const ProposedMembersList = (props) => {
-    const { mode, list, permissions, roleID, groupID, existingMemberList } = props;
+const ExistingMembersList = (props) => {
+    const { mode, list, roleID, groupID, permissions } = props;
     const [renderedElements, setRenderedElements] = useState([]);
-    const [displayProposeSearch, setProposeSearch] = useState(false);
-    const [displayNoMembersMessage, displayMessage] = useState(false);
-
     useEffect(() => {
         console.log("List is: ", list);
         if (list) {
-            displayMessage(false);
             if (mode === 'card') {
                 setRenderedElements(GenerateCardMode());
             } else {
                 setRenderedElements(GenerateListMode());
             }
         } else {
-            displayMessage(true);
         }
 
     }, [mode, list]);
 
-    const handleApprove = async (member) => {
-        console.log(`Approving proposal for ${member.userRef.pref_name}`);
-        const token = localStorage.getItem('token');
-        await axios.put(`/api/groups/${groupID}/settings/roles/update/${roleID}/approve/${member.userRef.id}`, {}, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        }).then((response) => {
-            if (response.status === 200) {
-                alert('Approval successful, role given to user.');
-                window.location.reload();
-            } else {
-                alert('Failed to remove user from list.');
-            }
-        }).catch((error) => {
-            console.log(error);
-        });
-    }
-
     const handleDelete = async (member) => {
-        console.log(`Deleting proposal for ${member.userRef.pref_name}`);
+        console.log(`Removing ${member.userRef.pref_name} from role`);
         const token = localStorage.getItem('token');
-        await axios.put(`/api/groups/${groupID}/settings/roles/update/${roleID}/void_proposal/${member.userRef.id}`, {}, {
+        await axios.put(`/api/groups/${groupID}/settings/roles/update/${roleID}/remove/${member.userRef.id}`, {}, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
@@ -70,20 +43,13 @@ const ProposedMembersList = (props) => {
         window.open(`tel:${phone}`);
     }
 
-    const handlePropose = () => {
-        setProposeSearch(true);
-    }
-    const handleClosePropose = () => {
-        setProposeSearch(false);
-    }
-
     const GenerateCardMode = () => {
         if (list.length === 0) {
             return (<Card style={{ width: '12rem' }}>
                 <Card.Body>
                     <Card.Img variant="top" src={`/Sillouet_Icon.png`} className="rounded-circle mx-auto d-block" style={{ width: '120px', height: '120px' }} />
 
-                    <Card.Title >No users proposed for role</Card.Title>
+                    <Card.Title >No users assigned</Card.Title>
                     <Card.Text>
                         {/* {item.leader && <>Proposed By:</>}<br /> {item.leader && item.leader.pref_name}<br />
                         {item.date && <>Proposed on:</>} {item.date && new Date(item.date._seconds * 1000).toLocaleDateString()} */}
@@ -102,11 +68,11 @@ const ProposedMembersList = (props) => {
                             <Card.Img variant="top" src={item.userRef.profile_image_url} className="rounded-circle mx-auto d-block" style={{ width: '120px', height: '120px' }} />
                             <Card.Title >{item.userRef.pref_name}</Card.Title>
                             <Card.Text>
-                                {item.leader && <>Proposed By:</>}<br /> {item.leader && item.leader.pref_name}<br />
-                                {item.date && <>Proposed on:</>} {item.date && new Date(item.date._seconds * 1000).toLocaleDateString()}
+                                {item.leader && <>Approved By:</>}<br /> {item.leader && item.leader.pref_name}<br />
+                                {item.date && <>Approved on:</>} {item.date && new Date(item.date._seconds * 1000).toLocaleDateString()}
                             </Card.Text>
-                            {permissions.CanApproveRoleProposals && item.leader.id !== window.localStorage.getItem('id') && <Button variant="primary" disabled={item.leader.id === window.localStorage.getItem('id')} onClick={() => handleApprove(item)} style={{ marginRight: '10px' }}><RiCheckLine /></Button>}
-                            {permissions.CanApproveRoleProposals && <Button variant="danger" onClick={() => handleDelete(item)} style={{ marginRight: '10px' }}><RiDeleteBinLine /></Button>}
+                            {/* {permissions.CanApproveRoleProposals && <Button variant="primary" onClick={() => handleApprove(item)} style={{marginRight:'10px'}}><RiCheckLine /></Button>} */}
+                            {permissions.CanRemoveUserRoles && <Button variant="danger" onClick={() => handleDelete(item)} style={{ marginRight: '10px' }}><RiDeleteBinLine /></Button>}
                             {item.userRef.phone && <Button variant="success" onClick={() => handleCall(item.userRef.phone)}><FiPhone /></Button>}
                         </Card.Body>
                     </Card>
@@ -132,7 +98,7 @@ const ProposedMembersList = (props) => {
                         <tr key={'0'}>
                             {permissions.CanViewRoleMemberDetails && <td></td>}
                             {permissions.CanViewRoleMemberDetails && <td></td>}
-                            <td style={{ display: 'block', position: 'relative' }}>{'No users proposed for role'}</td>
+                            <td style={{ display: 'block', position: 'relative' }}>{'No users assigned'}</td>
                             <td></td>
                             {/* <td>
                                 {permissions.CanRemoveUserRoles && <Button variant="danger" onClick={() => handleDelete(item)} style={{ marginRight: '10px' }}><RiDeleteBinLine /></Button>}
@@ -148,8 +114,8 @@ const ProposedMembersList = (props) => {
             <Table responsive striped bordered hover>
                 <thead>
                     <tr>
-                        {permissions.CanViewRoleMemberDetails && (<th>Proposed on:</th>)}
-                        {permissions.CanViewRoleMemberDetails && (<th>Proposed By:</th>)}
+                        {permissions.CanViewRoleMemberDetails && (<th>Approved on:</th>)}
+                        {permissions.CanViewRoleMemberDetails && (<th>Approved By:</th>)}
                         <th>Member</th>
                         <th>Actions</th>
                     </tr>
@@ -161,8 +127,8 @@ const ProposedMembersList = (props) => {
                             {permissions.CanViewRoleMemberDetails && <td>{item.leader && item.leader.pref_name}</td>}
                             <td style={{ display: 'block', position: 'relative' }}>{(item.userRef.pref_name)}</td>
                             <td>
-                                {permissions.CanApproveRoleProposals && (item.leader.id !== window.localStorage.getItem('id')) && <Button variant="primary" disabled={item.leader.id === window.localStorage.getItem('id')} onClick={() => handleApprove(item)} style={{ marginRight: '10px' }}><RiCheckLine /></Button>}
-                                {permissions.CanApproveRoleProposals && <Button variant="danger" onClick={() => handleDelete(item)} style={{ marginRight: '10px' }}><RiDeleteBinLine /></Button>}
+                                {/* {permissions.CanApproveRoleProposals && <Button variant="primary" onClick={() => handleApprove(item)} style={{marginRight:'10px'}}><RiCheckLine /></Button>} */}
+                                {permissions.CanRemoveUserRoles && <Button variant="danger" onClick={() => handleDelete(item)} style={{ marginRight: '10px' }}><RiDeleteBinLine /></Button>}
                                 {item.userRef.phone && <Button variant="success" onClick={() => handleCall(item.userRef.phone)}><FiPhone /></Button>}
                             </td>
                         </tr>
@@ -175,19 +141,10 @@ const ProposedMembersList = (props) => {
 
     return (
         <div>
-            <h2>Proposed Members</h2>
-            <div className="toggle-container">
-                <Button variant="success" disabled={!permissions.CanProposeRoles} onClick={handlePropose}>Propose Member</Button>
-            </div>
-            <br />
-            {!displayNoMembersMessage && (
-                <div className="List-Container">
-                    {renderedElements}
-                </div>)}
-
-            {displayProposeSearch && <Popup component={<ProposeSearchBar groupID={groupID} roleID={roleID} existingMemberList={existingMemberList} closeBtn={handleClosePropose} />} />}
+            <h2>Members</h2>
+            {renderedElements}
         </div>
     );
 }
 
-export default ProposedMembersList;
+export default ExistingMembersList;
