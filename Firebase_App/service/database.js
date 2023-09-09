@@ -1,13 +1,6 @@
-const { MongoClient, ObjectId } = require('mongodb')
 const admin = require('./firebaseConfig.js');
-const uuid = require('uuid');
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
-const bcrypt = require('bcrypt');
-
-const userName = process.env.MONGOUSER;
-const password = process.env.MONGOPASSWORD;
-const hostname = process.env.MONGOHOSTNAME;
 const AWS_Region = process.env.AWS_REGION;
 const AWS_AccessKeyID = process.env.AWS_KEY;
 const AWS_SecretKey = process.env.AWS_SECRET_KEY;
@@ -18,17 +11,31 @@ const Organizations_Collection = db.collection('Organizations');
 if (!db) {
   throw Error('Database not configured. Set Firebase Confiuration');
 }
-
-const url = `mongodb+srv://${userName}:${password}@${hostname}`;
-
-const client = new MongoClient(url);
-const userCollection = client.db('Organization-Tools-DB').collection('Users');
-const AuthTokenCollection = client.db('Organization-Tools-DB').collection('AuthTokens');
-const organizationsCollection = client.db('Organization-Tools-DB').collection('organization_groups');
-const organizations_Enrollment_Collection = client.db('Organization-Tools-DB').collection('organization_enrollement');
-const organizationRolesCollection = client.db('Organization-Tools-DB').collection('organizations_roles');
-const organizationSurveys = client.db('Organization-Tools-DB').collection('organization-questionares');
 const FieldValue = admin.firestore.FieldValue;
+
+const getActiveAnnouncements = async (organizationUID) => {
+  const now = new Date();
+  const announcementsRef = db.collection(`Organizations/${organizationUID}/Announcements`);
+
+  try {
+    const snapshot = await announcementsRef.where('expires', '>', now).get();
+
+    if (snapshot.empty) {
+      console.log('No active announcements found.');
+      return [];
+    }
+
+    const activeAnnouncements = [];
+    snapshot.forEach((doc) => {
+      activeAnnouncements.push({ id: doc.id, ...doc.data() });
+    });
+
+    return activeAnnouncements;
+  } catch (error) {
+    console.error('Error getting active announcements:', error);
+    return [];
+  }
+};
 
 
 async function getUserDocument(firebase_uid) {
@@ -100,40 +107,109 @@ async function addNewEnrollment(collectionPath, documentId, data) {
   await documentRef.set(data);
 }
 
-function getReferencedDocument(DocumentPath){
-  return  db.doc(DocumentPath);
+function getReferencedDocument(DocumentPath) {
+  return db.doc(DocumentPath);
 }
 
-async function appendUserEnrollment(orgID,userID){
+async function appendUserEnrollment(orgID, userID) {
   const Organization = db.doc(`Organizations/${orgID}`);
-  const userRef = Public_User_Collection.doc(userID);
   const userAI = db.doc(`User-Public-Profile/${userID}`);
-  await Organization.update({"group_members": FieldValue.arrayUnion(userAI)});
+  await Organization.update({ "group_members": FieldValue.arrayUnion(userAI) });
 }
-
-
-function isAliasUsed(alias) {
-  Public_User_Collection.where("alias", '==', alias).get()
-    .then((queryResult) => {
-      if (!queryResult) {
+async function RemoveUserEnrollment(orgID, userID) {
+  const Organization = db.doc(`Organizations/${orgID}`);
+  const userAI = db.doc(`User-Public-Profile/${userID}`);
+  await Organization.update({ "group_members": FieldValue.arrayUnion(userAI) });
+}
+async function appendUserPending(orgID, userID) {
+  const Organization = db.doc(`Organizations/${orgID}`);
+  const userAI = db.doc(`User-Public-Profile/${userID}`);
+  await Organization.update({ "pending_join_approval": FieldValue.arrayUnion(userAI) });
+}
+async function removeUserPending(orgID, userID) {
+  const Organization = db.doc(`Organizations/${orgID}`);
+  const userAI = db.doc(`User-Public-Profile/${userID}`);
+  await Organization.update({ "pending_join_approval": FieldValue.arrayRemove(userAI) });
+}
+async function isUserApprover(approverUID, groupID) {
+  //get enrollment doc
+  const userEnrollDoc = await getFirebaseDocument(`User-Public-Profile/${approverUID}/Enrollments/${groupID}`);
+  const docDataRef = await userEnrollDoc.get();
+  var RolesList = [];
+  if (docDataRef.exists) {
+    const data = docDataRef.data();
+    console.log(data);
+    const roles = data.roles;
+    for (let i = 0; i < roles.length; ++i) {
+      const currRole = await roles[i].get();
+      if (currRole.exists) {
+        //Store existing role into roles array:
+        const roleData = currRole.data();
+        console.log(roleData);
+        RolesList.push(roleData);
+      }
+    }
+    //go through each role like before:
+    for (let indexRole = 0; indexRole < RolesList.length; ++indexRole) {
+      const roleTemp = RolesList[indexRole].role_permissions;
+      if (roleTemp.CanApproveRequests) {
         return true;
       }
-      else {
-        return false;
-      }
-    })
+    }
+    return false;
+  }
 }
-function isPhoneNumberUsed(phone) {
-  Public_User_Collection.where("phone", '==', phone).get()
-    .then((queryResult) => {
-      if (!queryResult) {
+async function isSender(senderUID, groupID) {
+  //get enrollment doc
+  const userEnrollDoc = await getFirebaseDocument(`User-Public-Profile/${senderUID}/Enrollments/${groupID}`);
+  const docDataRef = await userEnrollDoc.get();
+  var RolesList = [];
+  if (docDataRef.exists) {
+    const data = docDataRef.data();
+    console.log(data);
+    const roles = data.roles;
+    for (let i = 0; i < roles.length; ++i) {
+      const currRole = await roles[i].get();
+      if (currRole.exists) {
+        //Store existing role into roles array:
+        const roleData = currRole.data();
+        console.log(roleData);
+        RolesList.push(roleData);
+      }
+    }
+    //go through each role like before:
+    for (let indexRole = 0; indexRole < RolesList.length; ++indexRole) {
+      const roleTemp = RolesList[indexRole].role_permissions;
+      if (roleTemp.CanSendPushToOrganizations) {
         return true;
       }
-      else {
-        return false;
-      }
-    })
+    }
+    return false;
+  }
 }
+async function approveJoin(groupID, userID) {
+
+}
+async function isAliasUsed(alias) {
+  const queryResult = await Public_User_Collection.where("alias", '==', alias).get();
+
+  if (queryResult.empty) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+async function isPhoneNumberUsed(phone) {
+  const queryResult = await Public_User_Collection.where("phone", '==', phone).get();
+
+  if (queryResult.empty) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
 
 async function setNewUserProfile(userUID, data) {
   Public_User_Collection.doc(userUID).set(data)
@@ -147,15 +223,15 @@ async function setNewUserProfile(userUID, data) {
     })
 }
 
-async function setPublicProfileImage(userUID, urlPath){
+async function setPublicProfileImage(userUID, urlPath) {
   const userRef = Public_User_Collection.doc(userUID);
-  try{
+  try {
     await userRef.update({
-      profile_image_url:urlPath
+      profile_image_url: urlPath
     });
-      console.log('Image URL Uploaded');
-      return true;
-  }catch(error){
+    console.log('Image URL Uploaded');
+    return true;
+  } catch (error) {
     console.log('Failed to update Profile URL: ', error);
     return false;
   };
@@ -175,306 +251,123 @@ async function getFirebaseOrgDocByJoinCode(joinCode) {
 }
 
 
-
-
-function getUserByEmail(email) {
-  return userCollection.findOne({ email: email });
-}
-function getUserByAlias(Alias) {
-  return userCollection.findOne({ alias: Alias });
-}
-function getUserBy_id(id) {
-  return userCollection.findOne({ _id: id });
-}
-function getUserByFirebaseUID(firebase_uid) {
-  return userCollection.findOne({ firebase_uid: firebase_uid });
-}
-function getUserByPhoneNumber(phone_number) {
-  return userCollection.findOne({ phone: phone_number });
-}
-
-async function createAuthTokenForUser(alias) {
-  var date = new Date(); // Now
-  date.setDate(date.getDate() + 30);
-
-  const authToken = {
-    token: uuid.v4(),
-    alias: alias,
-    expiriation: date,
-  };
-  await AuthTokenCollection.insertOne(authToken);
-
-  return authToken;
-}
-//Tag FCM Client Token to user's authToken. This will keep track of FCM with the session of the user.
-//This will auto-remove FCM for expired and un-used sessions
-async function addClientPushToken(authTokenID, pushToken) {
-  await AuthTokenCollection.updateOne(
-    { token: authTokenID },
-    { $set: { pushToken: pushToken } }
-  );
-  return true;
-}
 //Send Push Notification
-async function pushNotificationToUsers(PushTitle, PushBody, PushOptions, RecipientList) {
+async function pushNotificationToUsers(tokensArray, payload) {
+  payload.sound = "default"
 
-  const message = {
-    'message': {
-      'token': RecipientList,
-      "notification": {
-        "title": `${PushTitle}`,
-        "body": `${PushBody}`
-      },
-      // "webpush": {
-      //   "headers": {
-      //     "Urgency": "high"
-      //   },
-      //   "notification": {
-      //     "body": "This is a message from FCM to web",
-      //     "requireInteraction": "true",
-      //     "badge": "/icon-192x192.png"
-      //   }
-      // }
-    }
-
-
+  try {
+    const response = await admin.messaging().sendMulticast({ tokens: tokensArray, ...payload });
+    console.log(response);
+    return response;
+  } catch (error) {
+    console.error('Error sending push notification:', error);
+    throw error;
   }
 }
-async function createUser(profile_image_url, first_name,
-  last_name, preferred_name, share_pref_name, phone, share_phone,
-  email, share_email, verified_email, dob, gender, firebase_uid) {
-  // Hash the password before we insert it into the database
-  const passwordHash = await bcrypt.hash(password, 10);
-  const creation_date = new Date();
-  const user = {
-    profile_image_url: profile_image_url,
-    first_name: first_name,
-    last_name: last_name,
-    preferred_name: preferred_name,
-    share_pref_name: share_pref_name,
-    phone: phone,
-    share_phone: share_phone,
-    email: email,
-    share_email: share_email,
-    verified_email: verified_email,
-    dob: dob,
-    gender: gender,
-    firebase_uid: firebase_uid,
-    creation_date: creation_date
+
+async function getUserSessionTokens(userId) {
+  const user = await this.getFirebaseDocument(`User-Public-Profile/${userId}`);
+
+  const userRef = await user.get();
+  if (!userRef.exists) {
+    throw new Error('User not found');
+  } else {
+    const userData = userRef.data();
+    const sessionTokens = userData.sessions;
+
+    if (!sessionTokens) {
+      return ([]);
+    } else {
+      // Extract the tokens from the sessions and store them in an array.
+      const tokensArray = sessionTokens.map((session) => session.token);
+      return tokensArray;
+    }
+  }
+}
+
+async function addAnnouncement(groupID, title, body, dateExpires) {
+  const dateExpiresTimestamp = admin.firestore.Timestamp.fromDate(new Date(dateExpires));
+  const announcement = {
+    title,
+    body,
+    date_created: FieldValue.serverTimestamp(),
+    expires: dateExpiresTimestamp,
   };
-  await userCollection.insertOne(user);
 
-  return user;
+  const announcementRef = await db
+    .collection(`Organizations/${groupID}/Announcements`)
+    .add(announcement);
+
+  return announcementRef.id;
 }
-
-async function updateProfileImageURL(userID, url) {
-  const query = { '_id': new ObjectId(userID) };
-  const update = { $set: { 'profile_image_url': url } };
-  const result = await userCollection.updateOne(query, update);
-
-  return result;
+async function removeAnnouncement(groupID, announcementID) {
+  await db
+    .doc(`Organizations/${groupID}/Announcements/${announcementID}`)
+    .delete();
 }
+async function getNotifications(userUID) {
+  try {
+    const notificationsRef = db.collection('User-Public-Profile').doc(userUID).collection('Notifications');
+    const snapshot = await notificationsRef.get();
 
-async function addMemberToOrg(orgUUID, memberUUID) {
-  await organizationsCollection.updateOne(
-    { "_id": new ObjectId(orgUUID) }, // filter to match the document
-    { $push: { "group_members": new ObjectId(memberUUID) } } // update to push the new member ID to the array
-  )
-  return true;
-}
+    const notifications = [];
+    snapshot.forEach((doc) => {
+      notifications.push({ id: doc.id, ...doc.data() });
+    });
 
-
-
-function DeleteAuthToken(tokenPassed) {
-  AuthTokenCollection.deleteOne({ token: tokenPassed });
-}
-
-async function getGroupsEnrollmentList(userID) {
-
-
-  const enrollmentListData = await organizations_Enrollment_Collection.find({ enrollee_id: userID });
-  const enrollmentList = await enrollmentListData.toArray();
-  return enrollmentList;
-}
-//Create new enrollement for user:
-async function enrollNewUser(groupUUID, memberUUID, standardRoleUUID) {
-  organizations_Enrollment_Collection.insertOne(
-    {
-      "group_enrollment_ID_Associated": new ObjectId(groupUUID),
-      "enrollee_id": new ObjectId(memberUUID),
-      "enrollment_date": new Date(),
-      "roles": [new ObjectId(standardRoleUUID)]
-    }
-  )
-
-}
-async function addRoleToMemberInOrg(groupUUID, memberUUID, roleUUID) {
-  await organizations_Enrollment_Collection.updateOne(
-    {
-      "_id": ObjectId(groupUUID),
-      "enrollee_id": new ObjectId(memberUUID)
-    }, // filter to match the document with the given _id and enrollee_id
-    { $push: { "roles": new ObjectId(roleUUID) } } // update to push the new role ID to the roles array
-  )
-}
-async function removeRoleFromMemberInOrg(groupUUID, memberUUID, roleUUID) {
-  await organizations_Enrollment_Collection.updateOne(
-    {
-      "_id": ObjectId(groupUUID),
-      "enrollee_id": ObjectId(memberUUID)
-    }, // filter to match the document with the given _id and enrollee_id
-    { $pull: { "roles": ObjectId(roleUUID) } } // update to remove the role ID from the roles array
-  )
-  return true;
-}
-async function getBaseMembershipIDFromOrgID(groupUUID) {
-  const baseMemberID = await organizationsCollection.findOne({ _id: new ObjectId(groupUUID) }, { base_role: 1 });
-  return baseMemberID.base_role.toString();
-}
-
-
-async function getOrgRoleByRoleID(roleID) {
-  const Role = await organizationRolesCollection.findOne({ _id: roleID });
-  return Role;
-
-}
-
-async function getOrgDoc(groupID) {
-  return await organizationsCollection.findOne({ _id: new ObjectId(groupID) });
-}
-function getGroupLables(groupID) {
-  return null;
-}
-async function getOrgDocByJoinCode(joinCode) {
-  return await organizationsCollection.findOne({ group_join_code: joinCode });
-}
-
-async function verifyUserInGroup(groupID, userID) {
-  const directory = await organizationsCollection.findOne({ _id: new ObjectId(groupID) });
-  const members = directory.group_members.map(member => member.toString());
-  const userIDString = userID.toString();
-  if (members.includes(userIDString)) {
-    return true;
+    return notifications;
+  } catch (error) {
+    console.error('Error getting notifications:', error);
+    throw error;
   }
-  return false;
-}
-async function checkEnrollmentExists(groupId, userId) {
-  const enrollment = await organizations_Enrollment_Collection.findOne({
-    group_enrollment_ID_Associated: groupId,
-    enrollee_id: userId,
-  });
-  return enrollment !== null;
 }
 
+// Delete a notification for the given user and notificationID
+async function deleteNotification(userUID, notificationID) {
+  try {
+    const notificationRef = db.collection('User-Public-Profile').doc(userUID).collection('Notifications').doc(notificationID);
+    await notificationRef.delete();
 
-async function getRolesIDsOfUserInGroup(userID, groupID) {
-  const EnrollementFound = await organizations_Enrollment_Collection.findOne({ group_enrollment_ID_Associated: new ObjectId(groupID), enrollee_id: new ObjectId(userID) });
-  const roleIDs = EnrollementFound.roles;
-  return roleIDs;
-}
-
-
-async function getDirectoryUsersIDs(groupID) {
-  const directory = await organizationsCollection.findOne({ _id: new ObjectId(groupID) });
-
-  let members = directory.group_members;
-  //return members;
-  if (!Array.isArray(members)) {
-    members = members.split(',').map(member => ObjectId(member.trim()));
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    throw error;
   }
-
-  members = await userCollection.find({ _id: { $in: members } }, {
-    _id: 1,
-    profile_image_url: 1,
-    first_name: 1,
-    last_name: 1,
-    preferred_name: 1,
-    share_pref_name: 1,
-    phone: 1,
-    share_phone: 1,
-    email: 1,
-    share_email: 1,
-    alias: 1,
-    dob: 0,
-    gender: 0,
-    password: 0,
-    creation_date: 0
-
-  }).toArray();
-  return members;
 }
 
-async function getRequiredSurveysGroups(groupUUID) {
-  const surveyIDsFound = await organizationSurveys
-    .find({ is_required: true, group_origin: new ObjectId(groupUUID) }, { _id: 1 })
-    .toArray();
+// Add a new notification for the given user
+async function addNotification(userUID, notificationData) {
+  try {
+    const notificationsRef = db.collection('User-Public-Profile').doc(userUID).collection('Notifications');
 
-  const surveyIDStrings = surveyIDsFound.map((survey) => survey._id.toString());
-  console.log(surveyIDStrings);
-  return surveyIDStrings;
+    // Add a timestamp field using Firebase server timestamp
+    const newNotificationData = {
+      ...notificationData,
+      timestamp: FieldValue.serverTimestamp(),
+    };
+
+    const docRef = await notificationsRef.add(newNotificationData);
+
+    return { id: docRef.id, ...newNotificationData };
+  } catch (error) {
+    console.error('Error adding notification:', error);
+    throw error;
+  }
 }
-
-async function checkDocumentExists(documentOwner, survey_origin) {
-  //console.log("document_owner:", documentOwner);
-  //console.log("survey_origin:", survey_origin);
-  const documentExists = await organizationSurveys.findOne({
-    survey_origin: new ObjectId(survey_origin),
-    document_type: 'Questionnaire_Response',
-    document_owner: new ObjectId(documentOwner),
-  }, { _id: 1 });
-
-  //console.log("documentExists:", documentExists);
-
-  return !documentExists;
-}
-
-async function addUserSubmission(submission) {
-  await organizationSurveys.insertOne(submission);
-  return true;
-}
-
-
-
-async function getSurveyHTML(groupUUID, survey_id) {
-  const survey_object = await organizationSurveys.findOne({ group_origin: new ObjectId(groupUUID), _id: new ObjectId(survey_id) });
-  return survey_object;
-}
-
-//For websockets:
-async function getAllGroupMembers(memberId) {
-  const result = await organizationsCollection.find(
-    {
-      "group_members": new ObjectId(memberId)
-    },
-    {
-      "group_members": 1
-    }
-  );
-  const allMembers = [];
-  result.forEach(doc => {
-    allMembers.push(...doc.group_members);
-  });
-  return allMembers;
-}
-
 
 
 const s3Client = new S3Client({
   region: AWS_Region,
   config: {
-
     credentials: {
       accessKeyId: AWS_AccessKeyID,
       secretAccessKey: AWS_SecretKey
     }
   }
-
 });
+
+
 // Function to create a Presigned URL for uploading a file to S3
-
-
-
-
 async function createPresignedUrlForUpload(bucketName, objectKey, contentType, expiresIn) {
   // Set up the PutObjectCommand
   const putObjectCommand = new PutObjectCommand({
@@ -490,9 +383,298 @@ async function createPresignedUrlForUpload(bucketName, objectKey, contentType, e
 
   return signedUrl;
 }
+//Role Management:
+async function createNewRole(groupID, formFields) {
+  try {
+    // get references to the subgroups
+    let subGroupLinkJurisdiction = formFields.sub_group_link_jurisdiction !== '' ?
+      db.collection('Organizations').doc(groupID).collection('Sub_Groups').doc(formFields.sub_group_link_jurisdiction) :
+      null;
+
+    let subGroupLinkBelong = formFields.sub_group_link_belong !== '' ?
+      db.collection('Organizations').doc(groupID).collection('Sub_Groups').doc(formFields.sub_group_link_belong) :
+      null;
+
+    // create the role data
+    let roleData = {
+      role_title: formFields.role_title,
+      display_title: formFields.display_title,
+      is_over_subgroup: formFields.is_over_subgroup,
+      is_belong_subgroup: formFields.is_belong_subgroup,
+      is_read_only: formFields.is_read_only,
+      is_leadership: formFields.is_leadership,
+      role_permissions: []
+    };
+
+    if (subGroupLinkJurisdiction !== null) {
+      roleData['sub_group_link_jurisdiction'] = subGroupLinkJurisdiction;
+    }
+
+    if (subGroupLinkBelong !== null) {
+      roleData['sub_group_link_belong'] = subGroupLinkBelong;
+    }
+
+    // add the role to the database
+    let roleDocRef = await db.collection('Organizations').doc(groupID).collection('Roles').add(roleData);
+
+    console.log("Role created successfully.");
+    return roleDocRef.id;
+
+  } catch (error) {
+    console.error("Error creating role: ", error);
+    throw error; // rethrow the error so it can be handled by the route
+  }
+}
+//Role Functions for users:
+
+async function fetchAllRoles(groupID) {
+  const snapshot = await db.collection(`Organizations/${groupID}/Roles`).get();
+  if (snapshot.empty) throw new Error('No roles found');
+  let roles = [];
+  snapshot.forEach(doc => roles.push({ id: doc.id, ...doc.data() }));
+  return roles;
+}
+async function proposeUserRole(groupID, roleID, userUID, leaderUID) {
+  try {
+    // get references for both user profiles
+    let leaderRef = db.collection('User-Public-Profile').doc(leaderUID);
+    let userRef = db.collection('User-Public-Profile').doc(userUID);
+
+    // get reference to the proposed_members subcollection
+    let proposedMemberRef = db.collection('Organizations').doc(groupID).collection('Roles').doc(roleID).collection('ProposedMembers').doc(userUID);
+
+    // create a new document in the subcollection
+    await proposedMemberRef.set({
+      date: admin.firestore.FieldValue.serverTimestamp(),
+      leader: leaderRef,
+      userRef: userRef
+    });
+
+    console.log("User role proposed successfully.");
+    return true;
+  } catch (error) {
+    console.error("Error proposing user role: ", error);
+    return false;
+  }
+}
+async function approveUserRole(groupID, roleID, userUID, leaderUID) {
+  try {
+    // get references for both user profiles
+    let leaderRef = db.collection('User-Public-Profile').doc(leaderUID);
+    let userRef = db.collection('User-Public-Profile').doc(userUID);
+
+    // get reference to the proposed_members subcollection
+    let proposedMemberRef = db.collection('Organizations').doc(groupID).collection('Roles').doc(roleID).collection('Members').doc(userUID);
+
+    // create a new document in the subcollection
+    await proposedMemberRef.set({
+      date: admin.firestore.FieldValue.serverTimestamp(),
+      leader: leaderRef,
+      userRef: userRef
+    });
+
+    console.log("User role proposed successfully.");
+    return true;
+  } catch (error) {
+    console.error("Error proposing user role: ", error);
+    return false;
+  }
+}
+async function removeProposedUserRole(groupID, roleID, userUID) {
+  try {
+    // get reference to the user's proposed member document
+    let proposedMemberRef = db.collection('Organizations').doc(groupID).collection('Roles').doc(roleID).collection('ProposedMembers').doc(userUID);
+
+    // delete the document
+    await proposedMemberRef.delete();
+
+    console.log("User role proposal removed successfully.");
+    return true
+  } catch (error) {
+    console.error("Error removing proposed user role: ", error);
+    return false;
+  }
+}
+async function removeApprovedUserRole(groupID, roleID, userUID) {
+  try {
+    // get reference to the user's proposed member document
+    let proposedMemberRef = db.collection('Organizations').doc(groupID).collection('Roles').doc(roleID).collection('Members').doc(userUID);
+
+    // delete the document
+    await proposedMemberRef.delete();
+
+    console.log("User role proposal removed successfully.");
+    return true
+  } catch (error) {
+    console.error("Error removing proposed user role: ", error);
+    return false;
+  }
+}
+async function addUserRole(userUID, groupID, roleID) {
+  try {
+    // get reference to the role
+    let roleRef = db.collection('Organizations').doc(groupID).collection('Roles').doc(roleID);
+
+    // get reference to the user's enrollments document for this group
+    let userEnrollmentRef = db.collection('User-Public-Profile').doc(userUID).collection('Enrollments').doc(groupID);
+
+    // add the role to the user's roles array
+    await userEnrollmentRef.update({
+      roles: admin.firestore.FieldValue.arrayUnion(roleRef)
+    });
+
+    console.log("Role added to user's roles successfully.");
+    return true
+  } catch (error) {
+    console.error("Error adding role to user's roles: ", error);
+    return false;
+  }
+}
+async function removeUserRole(userUID, groupID, roleID) {
+  try {
+    // get reference to the role
+    let roleRef = db.collection('Organizations').doc(groupID).collection('Roles').doc(roleID);
+
+    // get reference to the user's enrollments document for this group
+    let userEnrollmentRef = db.collection('User-Public-Profile').doc(userUID).collection('Enrollments').doc(groupID);
+
+    // remove the role from the user's roles array
+    await userEnrollmentRef.update({
+      roles: admin.firestore.FieldValue.arrayRemove(roleRef)
+    });
+
+    console.log("Role removed from user's roles successfully.");
+    return true;
+  } catch (error) {
+    console.error("Error removing role from user's roles: ", error);
+    return false;
+  }
+}
+
+//Subgroup Calls
+async function createNewSubGroup(groupID, formFields) {
+  try {
+    // create the role data
+    let subGroupData = {
+      group_title: formFields.group_title,
+      sub_group_type: formFields.sub_group_type,
+      roles_jurisdiction: [],
+      roles_belonging: []
+    };
+
+    // add the role to the database
+    let subGroupDocRef = await db.collection('Organizations').doc(groupID).collection('Sub_Groups').add(subGroupData);
+
+    console.log("Role created successfully.");
+    return subGroupDocRef.id;
+
+  } catch (error) {
+    console.error("Error creating subgroup: ", error);
+    throw error; // rethrow the error so it can be handled by the route
+  }
+}
+async function getSubGroupsListed(groupID) {
+  const snapshot = await db.collection(`Organizations/${groupID}/Sub_Groups`).get();
+  if (snapshot.empty) throw new Error('No subgroups found.');
+  let subgroupsList = [];
+  snapshot.forEach(doc => subgroupsList.push({ id: doc.id, ...doc.data() }));
+  return subgroupsList;
+}
+async function getSubGroupsListQuery(groupID, category_type) {
+  const snapshot = await db.collection(`Organizations/${groupID}/Sub_Groups`).where('sub_group_type', '==', category_type).get();
+  if (snapshot.empty) throw new Error('No matching subgroups found.');
+  let subgroupsList = [];
+  snapshot.forEach(doc => subgroupsList.push({ id: doc.id, ...doc.data() }));
+  return subgroupsList;
+}
+
+async function addUserSubgroup(groupID, subGroupID, userUID, leaderUID) {
+  try {
+    // get references for both user profiles
+    let leaderRef = db.collection('User-Public-Profile').doc(leaderUID);
+    let userRef = db.collection('User-Public-Profile').doc(userUID);
+
+    // get reference to the proposed_members subcollection
+    let proposedMemberRef = db.collection('Organizations').doc(groupID).collection('Sub_Groups').doc(subGroupID).collection('ProposedMembers').doc(userUID);
+
+    // create a new document in the subcollection
+    await proposedMemberRef.set({
+      date: admin.firestore.FieldValue.serverTimestamp(),
+      leader: leaderRef,
+      userRef: userRef
+    });
+
+    console.log("User successfully added to subgroup.");
+    return true;
+  } catch (error) {
+    console.error("Error adding user to subgroup: ", error);
+    return false;
+  }
+}
+async function removeUserSubgroup(groupID, subGroupID, userUID) {
+  try {
+    // get reference to the user's proposed member document
+    let proposedMemberRef = db.collection('Organizations').doc(groupID).collection('Sub_Groups').doc(subGroupID).collection('Members').doc(userUID);
+
+    // delete the document
+    await proposedMemberRef.delete();
+
+    console.log("User removed successfully from subgroup.");
+    return true
+  } catch (error) {
+    console.error("Error removing user from subgroup.", error);
+    return false;
+  }
+}
+async function getSubgroupDetails(groupID, subgroupID) {
+  const snapshot = await db.collection(`Organizations/${groupID}/Sub_Groups`).doc(subgroupID).get();
+  if (!snapshot.exists) {
+    throw new Error('Subgroup not found');
+  }
+  return { id: snapshot.id, ...snapshot.data() };
+}
+
+async function appendRoleToSubLeadership(groupID, subgroupID, roleID){
+  try {
+    let subgroupRef = db.collection('Organizations').doc(groupID).collection('Sub_Groups').doc(subgroupID);
+    let roleRef = db.collection('Organizations').doc(groupID).collection('Roles').doc(roleID);
+
+    // Add the role to the roles_jurisdiction array in the subgroup document
+    await subgroupRef.update({
+      roles_jurisdiction: admin.firestore.FieldValue.arrayUnion(roleRef)
+    });
+
+    console.log("Role successfully appended to Subgroup leadership.");
+    return true;
+  } catch (error) {
+    console.error("Error appending role to subgroup leadership: ", error);
+    return false;
+  }
+}
+
+async function appendRoleToSubRoles(groupID, subgroupID, roleID){
+  try {
+    let subgroupRef = db.collection('Organizations').doc(groupID).collection('Sub_Groups').doc(subgroupID);
+    let roleRef = db.collection('Organizations').doc(groupID).collection('Roles').doc(roleID);
+
+    // Add the role to the roles_belonging array in the subgroup document
+    await subgroupRef.update({
+      roles_belonging: admin.firestore.FieldValue.arrayUnion(roleRef)
+    });
+
+    console.log("Role successfully appended to Subgroup roles.");
+    return true;
+  } catch (error) {
+    console.error("Error appending role to subgroup roles: ", error);
+    return false;
+  }
+}
+
+
 
 module.exports = {
   //Firebase Calls
+  getActiveAnnouncements,
   getUserDocument,
   getFirebaseDocument,
   addNewEnrollment,
@@ -504,36 +686,36 @@ module.exports = {
   getFirebaseOrgDocByJoinCode,
   getReferencedDocument,
   appendUserEnrollment,
-  //MongoDB Calls
-  getAllGroupMembers,
-  getUserByEmail,
-  getUserBy_id,
-  getUserByAlias,
-  getUserByPhoneNumber,
-  createAuthTokenForUser,
-  getUserByFirebaseUID,
-  createUser,
-  DeleteAuthToken,
-  getOrgDocByJoinCode,
-  addMemberToOrg,
-  enrollNewUser,
-  addClientPushToken,
-  getDirectoryUsersIDs,
-  verifyUserInGroup,
-  checkEnrollmentExists,
-  addRoleToMemberInOrg,
-  removeRoleFromMemberInOrg,
-  getOrgDoc,
-  getGroupLables,
+  RemoveUserEnrollment,
+  appendUserPending,
+  removeUserPending,
+  isUserApprover,
+  isSender,
+  approveJoin,
   createPresignedUrlForUpload,
-  updateProfileImageURL,
-  getGroupsEnrollmentList,
-  getOrgRoleByRoleID,
-  getRolesIDsOfUserInGroup,
-  getBaseMembershipIDFromOrgID,
-  getRequiredSurveysGroups,
-  checkDocumentExists,
-  getSurveyHTML,
-  addUserSubmission,
   pushNotificationToUsers,
+  getUserSessionTokens,
+  addAnnouncement,
+  removeAnnouncement,
+  getNotifications,
+  deleteNotification,
+  addNotification,
+  //Role Calls
+  createNewRole,
+  fetchAllRoles,
+  proposeUserRole,
+  approveUserRole,
+  removeProposedUserRole,
+  removeApprovedUserRole,
+  addUserRole,
+  removeUserRole,
+  //Subgroup Calls:
+  createNewSubGroup,
+  getSubGroupsListed,
+  getSubGroupsListQuery,
+  addUserSubgroup,
+  removeUserSubgroup,
+  getSubgroupDetails,
+  appendRoleToSubLeadership,
+  appendRoleToSubRoles
 };
