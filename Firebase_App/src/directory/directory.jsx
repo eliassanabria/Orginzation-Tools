@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useContext, useMemo } from 'react';
 import { useParams , NavLink} from 'react-router-dom'
 import { AuthState } from '../authentication/login/AuthState'
-//import { Socket, UserStatusChangeEvent } from '../addons_React/socketCommunicator';
 import { Spinner } from '../addons_React/Spinners/Spinner';
 import '../authentication/AuthPopup.css';
 import './directory.css';
@@ -68,34 +67,8 @@ export function Directory(props) {
       gridContainer.innerHTML = "Please log in to view this directory";
       return;
     }
-    //console.log("Grid is :" + gridContainer);
 
-    // fetch("/api/" + id + '/membership/validate', {
-    //   headers: {
-    //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-    //   }
-    // })
-    //   .then(response => {
-    //     if (response.status === 412) {
-    //       //console.log("412 missing data");
-
-    //       //get surveyIDs
-    //       response.json().then(responseBody => {
-    //         const survey_array = Array.from(responseBody.data);
-    //         const confirmed = window.confirm("Looks like you have " + survey_array.length + " surveys before you can access this page.\nClick continue to take the survey!", "Continue");
-    //         if (confirmed) {
-    //           window.location.href = ('/' + id + '/surveys/' + survey_array[0]);
-    //         }
-    //       });
-    //       return;
-    //     } else {
-
-    //     }
-    //   })
-
-    const apiUrl = "/api/" + groupID + '/directory';
-    //var directoryCell = gridContainer.children[0];
-    //gridContainer = "";
+    const apiUrl = "/api/groups/" + groupID + '/directory';
     // Call the API and get the response
     setLoader(true);
     fetch(apiUrl, {
@@ -127,7 +100,6 @@ export function Directory(props) {
         return response.json();
       })
       .then(responseBody => {
-        setApprovalStatus(true);
         const users = Array.from(responseBody.data); // Create an array from the JSON data
         //console.log(users); // This will log an array of user objects to the console
         setOrgName(responseBody.OrgName);

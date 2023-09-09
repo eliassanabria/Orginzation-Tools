@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { CAlert } from '@coreui/react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faApple } from '@fortawesome/free-brands-svg-icons';
 import 'bootstrap';
 import '../AuthPopup.css';
 import { Spinner } from '../../addons_React/Spinners/Spinner';
-import { signInWithEmailAndPassword, signInWithGoogle, registerWithEmailAndPassword, signInWithApple} from './Firebase_Assets/authFunctions';
+import { signInWithEmailAndPassword, signInWithGoogle, registerWithEmailAndPassword, signInWithApple } from './Firebase_Assets/authFunctions';
 import { auth } from './Firebase_Assets/firebaseConfig';
 import TermsModal from '../../Legal/TOSModal';
 export function LoginPopupForm(props) {
@@ -13,18 +15,18 @@ export function LoginPopupForm(props) {
   const targetURL = props.targetURL;
   const closePopup = props.closePopup;
   const [displayTOS, setTOSDisp] = useState(false);
-  const onClose = ()=>{
+  const onClose = () => {
     setTOSDisp(false);
   }
-  const toggleTOS = ()=>{
+  const toggleTOS = () => {
     setTOSDisp(true);
   }
-   const loginWithGoogle = async(event)=> {
+  const loginWithGoogle = async (event) => {
     event.preventDefault();
     try {
       setLoader(true);
       await signInWithGoogle(auth)
-      
+
 
       //window.location.href = targetURL;
     }
@@ -34,13 +36,13 @@ export function LoginPopupForm(props) {
       if (error.code === 'auth/account-exists-with-different-credential') {
         const email = error.email;
         const pendingCred = error.credential;
-        
+
         // Prompt the user to enter their email/password account
         const password = window.prompt(`Enter the password for ${email}:`);
-        
+
         // Sign in with email and password
         await auth.signInWithEmailAndPassword(email, password);
-        
+
         // Get the signed-in user
         const user = auth.currentUser;
         setLoader(true);
@@ -53,12 +55,12 @@ export function LoginPopupForm(props) {
       setLoader(false);
     }
   }
-  const signInWithApplePopup = async(event) =>{
+  const signInWithApplePopup = async (event) => {
     event.preventDefault();
-    try{
+    try {
       setLoader(true);
       await signInWithApple(auth);
-    }catch(error){
+    } catch (error) {
       alert(error);
     }
     setLoader(false);
@@ -104,15 +106,17 @@ export function LoginPopupForm(props) {
     <div>
       <a href="#" className="login-button" onClick={loginWithGoogle} >
         <img src="https://lh3.googleusercontent.com/COxitqgJr1sJnIDe8-jiKhxDx1FrYbtRHKJ9z_hELisAlapwE9LUPh6fcXIfb5vwpbMl4xl9H9TRFPc5NOO8Sb3VSgIBrfRYvW6cUA" alt="Google logo" className="google-logo"></img>Login with Google</a>
-        <br></br><br></br>
-        {/* <br></br><br></br>
-        <button class="apple-button" onClick={signInWithApplePopup} disabled>
-  <span class="apple-icon"></span>
-  <span class="apple-text">Sign in with Apple</span>
-</button>
+      <br /><br />
+      <button class="apple-button" onClick={signInWithApplePopup} >
+        <span><FontAwesomeIcon icon={faApple} style={{ marginRight: '10px' }} />
+          Sign in with Apple</span> 
+      </button><small><small> (Disabled for the time being)</small></small>
+      <br />
+
 
       <br></br><br></br>
       {displayLoader && <Spinner />}
+      {/*
       <form id="LoginForm" onSubmit={singInWithUsernameAndPassword}>
         <label htmlFor="email">Email:</label>
         <input
@@ -145,12 +149,13 @@ export function LoginPopupForm(props) {
         <br />
       </form> */}
       <small>By using this app you agree to the <a href='#' onClick={toggleTOS}>Terms of Service</a></small>
-      <button className="btn btn-light"onClick={closePopup}>Cancel</button>
-      <TermsModal onClose={onClose} isOpen={displayTOS}/>
+      <button className="btn btn-light" onClick={closePopup}>Cancel</button>
+      <TermsModal onClose={onClose} isOpen={displayTOS} />
     </div>
 
 
   );
 
 }
+
 export default LoginPopupForm;

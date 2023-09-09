@@ -10,6 +10,7 @@ import "react-tabs/style/react-tabs.css";
 import { Directory } from "../directory/directory";
 import RoleManagementScreen from "./SettingsTabs/Roles/RolesManagement";
 import ApprovalsTab from "./SettingsTabs/ApprovalsScreen/ApprovalsTab";
+import SubGroupManagementScreen from "./SettingsTabs/Subgroups/SubGroupManagement";
 
 const GroupSettings = (props) => {
     const authenticated = props.Authenticated;
@@ -123,7 +124,7 @@ const GroupSettings = (props) => {
                 <TabList className='TabsListCustom'>
                     <Tab>Settings</Tab>
                     {CanViewApprovalsScreen && (<Tab>Approvals</Tab>)}
-                    {CanViewSubgroups && (<Tab>Subgroups</Tab>)}
+                    {CanViewSubgroups && (<Tab><Link className='blackLink' to={`/groups/${groupID}/settings/subgroups/manage`}>Subgroup Management</Link></Tab>)}
                     {CanViewRoles && (<Tab>{rolesTabLabel}s</Tab>)}
                     {CanViewSurveys && (<Tab>Surveys</Tab>)}
                     {CanRemoveUsers && (<Tab>Manage Members</Tab>)}
@@ -180,14 +181,7 @@ const GroupSettings = (props) => {
 
                 {
                     CanViewSubgroups && (<TabPanel>
-                        <h2>Subgroups</h2>
-                        <div className="alert alert-danger" role='alert'>This feature is is the works, none of the buttons work at this time.</div>
-
-                        <ul>
-                            {subGroups.map(subGroup => (
-                                <li key={subGroup.id}>{subGroup.name}</li>
-                            ))}
-                        </ul>
+                        <></>
                     </TabPanel>)
                 }
 

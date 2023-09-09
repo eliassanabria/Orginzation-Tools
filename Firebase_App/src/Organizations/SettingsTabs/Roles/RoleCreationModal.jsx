@@ -13,7 +13,8 @@ const RoleForm = ({ roleLable, groupID, handleClose }) => {
     sub_group_link_jurisdiction: '',
     is_belong_subgroup: false,
     sub_group_link_belong: '',
-    is_read_only: false
+    is_read_only: false,
+    is_leadership: false
   });
 
   const [subGroups, setSubGroups] = useState([]);
@@ -24,7 +25,7 @@ const RoleForm = ({ roleLable, groupID, handleClose }) => {
       const response = await axios.get(`/api/groups/${groupID}/settings/subgroups/list/all`,{
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSubGroups(response.data.allSubGroupLists);
+      setSubGroups(response.data.list);
     };
 
     fetchData();
@@ -81,13 +82,18 @@ const RoleForm = ({ roleLable, groupID, handleClose }) => {
           <Form.Group controlId="sub_group_link_jurisdiction">
               <Form.Label>Select Subgroup</Form.Label>
               <Form.Select name="sub_group_link_jurisdiction" required onChange={handleInputChange}>
+              <option value="">Select Subgroup</option>
                 {subGroups.map((group) => (
-                  <option key={group.subgroupID} value={group.subgroupID}>
+                  <option key={group.id} value={group.id}>
                     {group.group_title}
                   </option>
                 ))}
               </Form.Select>
             </Form.Group>
+            <Form.Group controlId="is_leadership">
+            <Form.Label>Is {roleLable} a leadership position?</Form.Label>
+            <Form.Check type="switch" name="is_leadership"  onChange={() => handleSwitchChange('is_leadership')} />
+          </Form.Group>
             <br></br>
           </>
           )}
@@ -100,8 +106,10 @@ const RoleForm = ({ roleLable, groupID, handleClose }) => {
             <Form.Group controlId="sub_group_link_belong">
               <Form.Label>Select Subgroup</Form.Label>
               <Form.Select name="sub_group_link_belong" required onChange={handleInputChange}>
+              <option value="">Select Subgroup</option>
+
                 {subGroups.map((group) => (
-                  <option key={group.subgroupID} value={group.subgroupID}>
+                  <option key={group.id} value={group.id}>
                     {group.group_title}
                   </option>
                 ))}

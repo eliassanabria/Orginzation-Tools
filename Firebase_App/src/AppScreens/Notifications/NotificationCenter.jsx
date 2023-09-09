@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { AuthState } from "../../authentication/login/AuthState";
 import { useNavigate } from 'react-router-dom';
 import './NotificationCenterStyles.css'
 import { Badge, Card, Button } from 'react-bootstrap';

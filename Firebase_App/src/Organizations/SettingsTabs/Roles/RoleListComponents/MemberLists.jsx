@@ -3,8 +3,9 @@ import { useParams } from 'react-router-dom'
 import ProposedMembersList from "./ProposedMembersList";
 import ExistingMembersList from "./ExistingMembersList";
 import { Button } from "react-bootstrap";
-
+import axios from "axios";
 import './Lists_Styles.css'
+import { AuthState } from "../../../../authentication/login/AuthState";
 const RoleLists = (props) => {
 
     const { Authenticated } = props;
@@ -52,33 +53,33 @@ const RoleLists = (props) => {
             }
 
         };
-
-        fetchProposedMembers().catch((error)=>{
+        if(permissions.length !== 0){
+            fetchProposedMembers().catch((error)=>{
             console.warn('No Proposed Users found')
         });
         fetchMembers().catch((error)=>{
             console.warn('No Users found')
 
         });
+        }
+        
     }, [permissions, Authenticated]);
 
     useEffect(() => {
         const fetchPermissions = async () => {
-            console.log("Fetching permissions");
-            const response = await fetch(`/api/groups/${groupID}/settings/permissions`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            if (response.ok) {
-
+            if (Authenticated === AuthState.Authenticated) {
+                //Fetch permissions:
+                await axios.get(`/api/groups/${groupID}/settings/permissions`)
+                .then((result)=>{
+                    if(result.status === 200){
+                        setPermissions(result.data);
+                        console.log(permissions);
+                    }
+                })
             }
-            const data = await response.json();
-            console.log('Permissions', data);
-            setPermissions(data);
-        };
+        }
         fetchPermissions();
-    }, []);
+    }, [Authenticated]);
 
     console.log("Permissions", permissions);
 
@@ -94,8 +95,12 @@ const RoleLists = (props) => {
             console.log('Details', data);
             setRoleDetails(data);
         };
-        fetchGroupDetails();
-    }, []);
+        
+        if(permissions.length !== 0){
+            fetchGroupDetails();
+        }
+        
+    }, [Authenticated]);
     useEffect(() => {
         if (permissions.CanViewProposedRoles) {
             if (members && proposedMembers) {

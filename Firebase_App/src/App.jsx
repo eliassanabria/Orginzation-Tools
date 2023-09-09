@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import SocketContext from './SocketContext';
 import { NavLink, Route, Routes } from 'react-router-dom';
 import { BrowserRouter as Router, useLocation } from 'react-router-dom';
@@ -38,12 +39,13 @@ import { NotificationCenter } from './AppScreens/Notifications/NotificationCente
 import ChatPage from './AppScreens/DirectMessages/DirectMessages';
 import RoleLists from './Organizations/SettingsTabs/Roles/RoleListComponents/MemberLists';
 import PricingPages from './AppScreens/Pricing Options/PricingPages';
+import SubGroupManagementScreen from './Organizations/SettingsTabs/Subgroups/SubGroupManagement';
+import SubgroupDetails from './Organizations/SettingsTabs/Subgroups/SubgroupDetails/SubgroupDetailsView';
 
 function App() {
   //Check for Mobile for prompt:
   const [isMobile, setIsMobile] = useState(false);
   const [isPWAInstalled, setIsPWAInstalled] = useState(false);
-  const [showNotificationCenter, setNotificationDrawer] = useState(false);
   useEffect(() => {
     // Check if the user is using a mobile device
     const userAgent = navigator.userAgent.toLowerCase();
@@ -243,22 +245,50 @@ function App() {
   }, [EmailAddress, auth]);
 
   useEffect(() => {
-    auth.onAuthStateChanged((userCred) => {
+    auth.onAuthStateChanged(async (userCred) => {
       if (userCred) {
-        //console.log(userCred);
         setAuthState(AuthState.Authenticated);
-        userCred.getIdToken().then((token) => {
-          localStorage.setItem('token', token);
-        })
+        const token = await userCred.getIdToken();
+        localStorage.setItem('token', token);
         localStorage.setItem('id', userCred.uid);
-        //Trigger the other useEffect to get remaining data
         setEmail(userCred.email);
         requestAuthPage(false);
 
-
+        // Set the token in the Axios authorization header
+        axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
       }
-    })
-  }, [auth])
+    });
+
+    // Setup Axios Interceptor
+    axios.interceptors.response.use(undefined, async error => {
+      if (error.config && error.response && error.response.status === 401 && !error.config.__isRetryRequest) {
+        // Token expired, try to refresh it
+        const newToken = await refreshToken();
+        
+        // Update the token in the request and retry it
+        error.config.headers['Authorization'] = 'Bearer ' + newToken;
+        
+        // Add this line to set the __isRetryRequest flag to true
+        error.config.__isRetryRequest = true;
+    
+        return axios(error.config);
+      }
+      return Promise.reject(error);
+    });
+
+  }, [auth]);
+
+  const refreshToken = async () => {
+    const userCred = auth.currentUser;
+    if (userCred) {
+      const token = await userCred.getIdToken(true);
+      localStorage.setItem('token', token);
+      return token;
+    }
+    // If no user is signed in, throw an error
+
+    throw new Error("No user is currently signed in.");
+  };
 
   useEffect(() => {
     if ('Notification' in window) {
@@ -579,6 +609,9 @@ function App() {
           <Route path='/groups/:groupID/settings' element={<GroupSettings Authenticated={authState} socket={Socket} />} />
           <Route path='/groups/:groupID/dashboard' element={<GroupDashboard Authenticated={authState} socket={Socket} />} />
           <Route path='/groups/:groupID/settings/roles/:roleID/lists' element={<RoleLists Authenticated={authState}/>} />
+          <Route path='/groups/:groupID/settings/subgroups/:subgroupID/lists' element={<RoleLists Authenticated={authState}/>} />
+          <Route path='/groups/:groupID/settings/subgroups/manage' element={<SubGroupManagementScreen Authenticated={authState}/>} />
+          <Route path='/groups/:groupID/subgroups/:subgroupID/view' element={<SubgroupDetails Authenticated={authState}/>} />
           <Route path='/groups' element={<Home Authenticated={authState} />} />
           <Route path='/register' element={<ProfileSetup Authenticated={authState} />} />
           <Route path='groups/:groupID/surveys/:surveyID' element={<SurveyCollection Authenticated={authState} />} />

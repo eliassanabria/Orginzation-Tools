@@ -24,12 +24,7 @@ const ProposeSearchBar = (props) => {
 
     const fetchUsers = async () => {
         setSpinnerDisp(true);
-        const token = localStorage.getItem('token');
-        const result = await axios.get(`/api/groups/${groupID}/directory`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
+        const result = await axios.get(`/api/groups/${groupID}/directory`);
         if(!result.ok){
             console.error('Failed to fetch directory');
             setSpinnerDisp(false);
@@ -54,12 +49,7 @@ const ProposeSearchBar = (props) => {
 
     const handlePropose = async () => {
         setIsProposing(true);
-        const token = localStorage.getItem('token');
-        await axios.put(`/api/groups/${groupID}/settings/roles/update/${roleID}/propose/${selectedUser.id}`, {}, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        }).then((response) => {
+        await axios.put(`/api/groups/${groupID}/settings/roles/update/${roleID}/propose/${selectedUser.id}`).then((response) => {
             setIsProposing(false);
             if (response.status === 200) {
                 alert('Successfully proposed user to role.');

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { AuthState } from "../../authentication/login/AuthState";
 import { useNavigate } from 'react-router-dom';
 import './NotificationCenterStyles.css'
 import { Badge } from 'react-bootstrap';
@@ -24,7 +23,6 @@ export const NotificationCenterPopup = (props) => {
     useEffect(() => {
         //if (authState === AuthState.Authenticated) {
           //call API for Notifications for the user logged in.
-      console.log('LOLksjdhfkswjhfrkajsdhfkajsdhf')
           const fetchNotifications = async () => {
             try {
               const response = await fetch(AuthenticationURL, {
@@ -97,8 +95,6 @@ export const NotificationCenterPopup = (props) => {
         }
       };
       
-
-
     return (
         <div className="notification-dropdown">
             <i className="fas fa-bell fa-lg" style={{ color: 'white' }} onClick={handleNotificationDropDownClick}>

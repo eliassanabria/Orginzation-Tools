@@ -103,7 +103,6 @@ const RoleManagementScreen = (props) => {
                         {CanDeleteRoles && !role.is_base_role && CanEditRoles && <Button style={{ marginLeft: '25px' }} variant="danger">Delete Role</Button>}
                     </Card.Body>
                 </Card>
-                
             </div>
         ));
     }
