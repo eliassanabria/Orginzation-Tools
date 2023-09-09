@@ -1,6 +1,7 @@
 
 class UserStatusChangeEvent {
   constructor(userID, status) {
+    this.type = 'StatusChange'
     this.userID = userID;
     this.status = status;
   }
@@ -8,6 +9,15 @@ class UserStatusChangeEvent {
 class UserApprovalEvent{
   constructor(success){
     this.success = success;
+  }
+}
+class AnnouncementEvent{
+  constructor(groupID, groupName, title, body){
+    this.type ='AnnouncementNotification'
+    this.groupID = groupID;
+    this.groupName = groupName
+    this.title = title;
+    this.body = body;
   }
 }
 
@@ -42,7 +52,7 @@ class SocketCommunicator {
     });
 
     this.socket.addEventListener('message', (event) => {
-      console.log(`Received message: ${event.data}`);
+      //console.log(`Received message: ${event.data}`);
       let parsedMessage;
       try {
         parsedMessage = JSON.parse(event.data);
@@ -54,9 +64,13 @@ class SocketCommunicator {
         const { userID, status } = parsedMessage;
         // Do something with the userUUID and status
         this.processUserStatus(userID, status);
-        console.log(`Received status update for user ${userID}: ${status}`);
+        //console.log(`Received status update for user ${userID}: ${status}`);
       } else if(parsedMessage.message_type === 'user_directory_approval'){
         this.processDirectoryApproval();
+      }
+      else if(parsedMessage.message_type === `Announcement_Notification`){
+        const {groupID, groupName, title, body} = parsedMessage;
+        this.processAnnouncement(groupID,groupName,title,body);
       }
       else {
         console.warn(`Received unknown message type: ${parsedMessage.message_type}`);
@@ -65,13 +79,12 @@ class SocketCommunicator {
 
     this.socket.addEventListener('close', () => {
 
-      if (this.socket.CLOSED === 3) {
+      if (this.socket.CLOSED === WebSocket.CLOSED) {
         this.WebSocketStatus = 'Disconnected';
-        console.log('Disconnected from server' + this.socket.CLOSED);
-        this.sendStatus(1, 1);
+        console.log('Disconnected from server' + WebSocket.CLOSED);
       }
 
-      setTimeout(() => this.sendStatus(1, 1), this.reconnectDelay); // Attempt to reconnect after a delay
+      setTimeout(() => this.connect, this.reconnectDelay); // Attempt to reconnect after a delay
     });
 
     this.socket.addEventListener('error', (error) => {
@@ -81,12 +94,49 @@ class SocketCommunicator {
       setTimeout(() => this.connect(), this.reconnectDelay);
     });
   }
-
+  processAnnouncement(groupID,groupName,title,body){
+    const announcementEvent = new AnnouncementEvent(groupID, groupName,title,body);
+    this.receiveEvent(announcementEvent);
+  }
+  sendAnnouncement(groupID, scope, title, body, isAnnouncement, expires){
+    const token = window.localStorage.getItem(('token'));
+    const SocketMessage ={
+      message_type:'AnnouncementSend',
+      SenderToken: token,
+      groupID: groupID,
+      scope: scope,
+      title: title,
+      body: body,
+      isAnnouncement: isAnnouncement,
+      expires: expires,
+    }
+    const message = JSON.stringify(SocketMessage);
+    if(this.socket.readyState === WebSocket.OPEN) {
+      this.socket.send(message);
+    }
+  }
   sendStatus(uuid, status) {
     const SocketMessage = {
       message_type: 'User_Status_Update_Send',
       userUUID: uuid,
       status: status
+    }
+    const message = JSON.stringify(SocketMessage);
+    if (this.socket.readyState === WebSocket.OPEN) {
+      this.socket.send(message);
+    } else {
+      console.log('Socket is not open');
+      this.WebSocketStatus = 'Disconnected';
+      throw Error('Unable to send:')
+    }
+  }
+  sendApproval(groupID, userID){
+    const token = window.localStorage.getItem(('token'));
+    const SocketMessage = {
+      message_type: 'Approval_Sent_To_User',
+      SenderToken: token,
+      recieverUID: userID,
+      groupID: groupID
     }
     const message = JSON.stringify(SocketMessage);
     if (this.socket.readyState === WebSocket.OPEN) {
@@ -117,7 +167,7 @@ class SocketCommunicator {
     });
   }
   processUserStatus(userID, status){
-    console.log(`User ${userID} is now ${status}`); 
+    //console.log(`User ${userID} is now ${status}`); 
     var statusIDLight = null;
     if (status === 'Online') {
       statusIDLight = 'overlayUserStatusOnline';
@@ -139,4 +189,4 @@ class SocketCommunicator {
 }
 
 const Socket = new SocketCommunicator();
-export { Socket, UserStatusChangeEvent, UserApprovalEvent};
+export { Socket, UserStatusChangeEvent, UserApprovalEvent, AnnouncementEvent};
